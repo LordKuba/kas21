@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob: https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none';">
+
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
-<meta http-equiv="X-Frame-Options" content="DENY">
+
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>KAS·21 — Kaspa Blackjack</title>
@@ -135,6 +135,12 @@ header {
   position:relative; display:flex; flex-direction:column;
   background: radial-gradient(ellipse at 50% 25%, rgba(73,234,203,0.055) 0%, transparent 65%), var(--felt);
   overflow:hidden;
+  min-height:0;
+}
+@media (max-width:859px) {
+  .table { overflow-y:auto !important; overflow-x:hidden !important; }
+  .player-zone { flex:0 0 auto; overflow:visible; }
+  .action-bar { flex:0 0 auto; position:sticky; bottom:0; background:var(--felt); padding-bottom:14px; z-index:5; }
 }
 .table::after {
   content:''; position:absolute; inset:0; pointer-events:none;
@@ -142,7 +148,7 @@ header {
 }
 
 /* zones */
-.dealer-zone  { flex:0 0 auto; padding:22px 32px 16px; position:relative; z-index:2; }
+.dealer-zone  { flex:0 0 auto; padding:22px 32px 16px; position:relative; z-index:2; min-height:0; }
 .divider {
   flex:0 0 auto; margin:0 32px; height:1px;
   background:linear-gradient(90deg,transparent,var(--border),transparent); position:relative;
@@ -153,9 +159,9 @@ header {
   background:var(--felt); padding:0 14px;
   font-size:0.55rem; color:var(--border); letter-spacing:3px; white-space:nowrap;
 }
-.player-zone  { flex:0 0 auto; padding:16px 32px 12px; position:relative; z-index:2; }
+.player-zone  { flex:1 1 auto; padding:16px 32px 12px; position:relative; z-index:2; overflow-y:auto; min-height:0; }
 .action-bar   {
-  flex:1; display:flex; flex-direction:column; justify-content:flex-end;
+  flex:0 0 auto; display:flex; flex-direction:column; justify-content:flex-end;
   padding:0 32px 18px; gap:12px; position:relative; z-index:2;
 }
 
@@ -875,12 +881,9 @@ a.link { color:var(--kas); }
 
   /* table scrollable on mobile so action area never clipped */
   .table {
-    overflow-y:auto;
-    overflow-x:hidden;
     -webkit-overflow-scrolling:touch;
   }
   .action-bar {
-    flex:0 0 auto;          /* don't shrink — always full size */
     justify-content:flex-start;
   }
 
@@ -1007,8 +1010,9 @@ a.link { color:var(--kas); }
 </div>
 
 <!-- ═══════════ WALLET MODAL ═══════════ -->
-<div class="overlay" id="walletModal">
-  <div class="modal">
+<div class="overlay" id="walletModal" onclick="if(event.target===this&&G._disclaimerDone)closeModal()">
+  <div class="modal" style="position:relative">
+    <button id="modalCloseBtn" onclick="closeModal()" style="display:none;position:absolute;top:12px;right:14px;z-index:10;background:none;border:none;color:var(--muted);font-size:1.1rem;line-height:1;cursor:pointer;padding:4px 6px;border-radius:6px;transition:all 0.15s" onmouseover="this.style.color='#e2e8f0';this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.color='var(--muted)';this.style.background='none'">✕</button>
     <div class="mhdr">
       <svg viewBox="0 0 44 44" fill="none">
         <polygon points="22,2 41,12 41,32 22,42 3,32 3,12" fill="none" stroke="#49EACB" stroke-width="1.5"/>
@@ -1017,10 +1021,11 @@ a.link { color:var(--kas); }
       </svg>
       <div class="mtitle">KAS · 21</div>
       <div class="msub">Blackjack on the Kaspa network</div>
-    </div>
-    <div class="mtabs">
+    </div><!-- /mhdr -->
+    <div class="mtabs" style="flex-wrap:wrap">
       <button class="mtab" id="mtab-kw"   onclick="switchMTab('kw')">⬡ KASWARE</button>
       <button class="mtab" id="mtab-kt"   onclick="switchMTab('kt')">🏰 KASTLE</button>
+      <button class="mtab" id="mtab-mm"   onclick="switchMTab('mm')">🦊 METAMASK</button>
       <button class="mtab a" id="mtab-dm" onclick="switchMTab('dm')">▷ DEMO</button>
     </div>
     <div class="mbody">
@@ -1035,6 +1040,13 @@ a.link { color:var(--kas); }
         <p class="msub" style="margin-bottom:14px;font-size:0.58rem;color:var(--muted)">✅ Works on mobile & desktop.<br>
           <a class="link" href="https://kastle.cc" target="_blank">→ Get Kastle</a></p>
         <button class="mbtn mbtn-p" onclick="connectKastle()">CONNECT KASTLE</button>
+      </div>
+      <div class="msec" id="msec-mm">
+        <p class="msub" style="margin-bottom:6px">Play on <b style="color:var(--kas)">Igra L2</b> with iKAS via MetaMask.</p>
+        <p class="msub" style="margin-bottom:14px;font-size:0.58rem;color:var(--muted)">⚡ Igra Galleon Testnet — Chain ID 38836.<br>
+          Make sure MetaMask is on <b>IGRA TST</b> network.<br>
+          <a class="link" href="https://metamask.io" target="_blank">→ Get MetaMask</a></p>
+        <button class="mbtn mbtn-p" onclick="connectMetaMask()" style="background:rgba(245,130,32,0.15);border-color:#F58220;color:#F58220">🦊 CONNECT METAMASK</button>
       </div>
       <div class="msec a" id="msec-dm">
         <p class="msub" style="margin-bottom:14px">Practice with simulated KAS — no real funds.</p>
@@ -1541,6 +1553,7 @@ function toggleCheck(id){
 }
 
 function enterSite(){
+  G._disclaimerDone = true;
   const screen = document.getElementById('disclaimerScreen');
   screen.style.transition = 'opacity 0.5s, transform 0.5s';
   screen.style.opacity = '0';
@@ -1845,10 +1858,13 @@ function draw(){
 // ═══════════════════════════════════════════════
 //  WALLET
 // ═══════════════════════════════════════════════
-function openModal(){document.getElementById('walletModal').classList.add('open');}
+function openModal(){
+  document.getElementById('walletModal').classList.add('open');
+  document.getElementById('modalCloseBtn').style.display = G._disclaimerDone ? 'block' : 'none';
+}
 function closeModal(){document.getElementById('walletModal').classList.remove('open');}
 function switchMTab(t){
-  ['kw','kt','dm'].forEach(id=>{
+  ['kw','kt','mm','dm'].forEach(id=>{
     document.getElementById('mtab-'+id).classList.toggle('a',id===t);
     document.getElementById('msec-'+id).classList.toggle('a',id===t);
   });
@@ -1896,6 +1912,60 @@ function connectDemo(){
   finishConnect();
 }
 
+
+async function connectMetaMask(){
+  if(!window.ethereum){toast('Install MetaMask first','err');setTimeout(()=>window.open('https://metamask.io','_blank'),1200);return;}
+  try{
+    // Request accounts
+    const accounts = await window.ethereum.request({method:'eth_requestAccounts'});
+    if(!accounts||!accounts[0]){toast('No account found','err');return;}
+    const addr = accounts[0];
+
+    // Check network
+    const chainId = await window.ethereum.request({method:'eth_chainId'});
+    if(chainId !== '0x97B4'){
+      try{
+        await window.ethereum.request({
+          method:'wallet_switchEthereumChain',
+          params:[{chainId:'0x97B4'}]
+        });
+      }catch(sw){
+        // Chain not added — add it
+        if(sw.code===4902){
+          await window.ethereum.request({
+            method:'wallet_addEthereumChain',
+            params:[{
+              chainId:'0x97B4',
+              chainName:'IGRA Galleon Testnet',
+              nativeCurrency:{name:'iKAS',symbol:'iKAS',decimals:18},
+              rpcUrls:['https://galleon-testnet.igralabs.com:8545'],
+              blockExplorerUrls:['https://explorer.galleon-testnet.igralabs.com']
+            }]
+          });
+        } else throw sw;
+      }
+    }
+
+    // Get balance
+    const balHex = await window.ethereum.request({method:'eth_getBalance',params:[addr,'latest']});
+    const balWei = BigInt(balHex);
+    const bal = Math.floor(Number(balWei) / 1e18);
+
+    G.wallet={ok:true,addr,mode:'real',provider:'metamask'};
+    G.wallet.contractAddr = '0xAb64aCedf4859683cE2811ceE41145E72A3a0755';
+    G.bal = bal;
+    finishConnect();
+
+    // Listen for account/chain changes
+    window.ethereum.on('accountsChanged', accs=>{
+      if(!accs||!accs[0]){ G.wallet={ok:false,addr:'',mode:'demo',provider:''}; updateBalance(); toast('Wallet disconnected','err'); }
+      else { G.wallet.addr=accs[0]; updateBalance(); }
+    });
+    window.ethereum.on('chainChanged', ()=>window.location.reload());
+
+  }catch(e){toast('MetaMask: '+( e.message||'Connection failed'),'err');console.warn('MM:',e);}
+}
+
 function finishConnect(){
   closeModal();
   document.getElementById('wdot').classList.add('live');
@@ -1940,6 +2010,7 @@ function updBet(){
 //  DEAL
 // ═══════════════════════════════════════════════
 async function deal(){
+  if(G.phase==='playing') return; // already in a hand
   if(!G.wallet.ok){openModal();return;}
   // Clamp bet — guards against console manipulation of G.bet
   G.bet = Math.max(1, Math.min(Math.floor(isFinite(G.bet) ? G.bet : 1), MAX_TOTAL, G.bal));
@@ -1975,7 +2046,7 @@ function afterIns(){
   document.getElementById('insBar').classList.remove('show');
   if(isBJ(G.player[0])||isBJ(G.dealer)){revealDealer();const sbNet=resolveSideBets()+resolveBustIt();resolveAll(sbNet);return;}
   setHint('Your turn — Hand 1');
-  document.getElementById('sbRow').style.display='flex';
+  document.getElementById('sbRow').style.display='none'; // hidden during play
   showPlay(true);
   showActiveBetBar();
   enableBtns();
@@ -1991,6 +2062,7 @@ function noIns(){G.ins=0;afterIns();}
 //  PLAYER ACTIONS
 // ═══════════════════════════════════════════════
 function hit(){
+  if(G.phase!=='playing') return; // guard
   sfx.clk();sfx.deal();
   G.player[G.aIdx].push(draw());renderAll();updateActiveBetBar();
   const t=total(G.player[G.aIdx]);
@@ -2003,9 +2075,10 @@ function hit(){
   }
 }
 
-function stand(){ sfx.clk(); nextHand(); }
+function stand(){ if(G.phase!=='playing') return; sfx.clk(); nextHand(); }
 
 function dbl(){
+  if(G.phase!=='playing') return; // guard
   // Check balance — offer add-funds if short
   const needed = G.bets[G.aIdx];
   if(needed > G.bal){
@@ -2020,6 +2093,7 @@ function dbl(){
 }
 
 function spl(){
+  if(G.phase!=='playing') return; // guard
   sfx.clk();
   const h=G.player[G.aIdx];
   if(h.length!==2||h[0].r!==h[1].r)return;
@@ -2224,13 +2298,16 @@ function nextRound(){
   clearAllSb(); unlockSbBets();
 }
 function repeatAndDeal(){
+  if(G._dealing) return; // guard against double-tap
+  G._dealing = true;
   nextRound();
-  document.getElementById('sbRow').style.display='none'; // hide immediately — deal() manages visibility
+  showBet(false); // hide DEAL button immediately — no window to click it
+  document.getElementById('sbRow').style.display='none';
   setTimeout(()=>{
     repeatBet();
     repeatSb();
-    setTimeout(deal,100);
-  },50);
+    setTimeout(()=>{ G._dealing=false; deal(); }, 80);
+  },40);
 }
 
 // ═══════════════════════════════════════════════
@@ -2566,8 +2643,8 @@ function toast(msg,type='ok'){
 document.addEventListener('keydown',e=>{
   if(document.getElementById('walletModal').classList.contains('open'))return;
   if(document.getElementById('resultPanel').classList.contains('show')){
-    if(e.key==='Enter'||e.key===' '){e.preventDefault();nextRound();}
-    if(e.key==='r'||e.key==='R'){e.preventDefault();repeatAndDeal();}
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();if(!G._dealing)nextRound();}
+    if(e.key==='r'||e.key==='R'){e.preventDefault();if(!G._dealing)repeatAndDeal();}
     return;
   }
   const playing=G.phase==='playing', betting=G.phase==='idle'||G.phase==='betting';
@@ -2575,9 +2652,9 @@ document.addEventListener('keydown',e=>{
   if(e.key==='s'||e.key==='S'){if(playing)stand();}
   if(e.key==='d'||e.key==='D'){if(playing&&!document.getElementById('bDouble').disabled)dbl();}
   if(e.key==='p'||e.key==='P'){if(playing&&!document.getElementById('bSplit').disabled)spl();}
-  if(e.key===' '){e.preventDefault();if(betting&&G.bet>0)deal();}
-  if(e.key==='1')addBet(1);if(e.key==='2')addBet(5);if(e.key==='3')addBet(10);
-  if(e.key==='4')addBet(25);if(e.key==='5')addBet(100);if(e.key==='6')addBet(50);
+  if(e.key===' '){e.preventDefault();if(betting&&G.bet>0&&!G._dealing)deal();}
+  if(betting){if(e.key==='1')addBet(1);if(e.key==='2')addBet(5);if(e.key==='3')addBet(10);
+  if(e.key==='4')addBet(25);if(e.key==='5')addBet(100);if(e.key==='6')addBet(50);}
 });
 
 // ═══════════════════════════════════════════════
@@ -2627,79 +2704,143 @@ document.addEventListener('keydown', e=>{
 function shareToX(){
   if(!LAST_HAND){ toast('Play a hand first!'); return; }
   const h = LAST_HAND;
+  const isWin = h.main==='win'||h.main==='bj';
+  if(!isWin){ toast('Share is for wins only 🏆'); return; }
 
-  // Portrait 9:16 friendly, also fine on Twitter
-  const W=600, H=900;
+  // Pre-build tweet text synchronously so we can open Twitter immediately
+  // (popup blockers block window.open inside async callbacks)
+  const _sign = h.net>=0?'+':'';
+  const _label = h.main==='bj'?'BLACKJACK!':'YOU WIN';
+  const _winMsgs = [
+    `💰 Just won +${h.net.toLocaleString()} KAS playing Blackjack on Kaspa! 🃏\nCome get yours → kas21.io`,
+    `🤑 +${h.net.toLocaleString()} KAS richer after one hand of KAS·21! 🎰\nPlay Blackjack on Kaspa → kas21.io`,
+    `🔥 Blackjack pays in real KAS! Just pocketed +${h.net.toLocaleString()} KAS 💸\n→ kas21.io`,
+    `💎 +${h.net.toLocaleString()} KAS won on KAS·21 — the only Blackjack that pays in Kaspa! 🃏\nPlay now → kas21.io`,
+  ];
+  const _bjMsgs = [
+    `🃏 BLACKJACK! +${h.net.toLocaleString()} KAS in one shot 💰\nReal KAS, real winnings → kas21.io`,
+    `👑 BLACKJACK pays 3:2 in real KAS! Just won +${h.net.toLocaleString()} KAS 🤑\n→ kas21.io`,
+  ];
+  const _msgs = h.main==='bj' ? _bjMsgs : _winMsgs;
+  const _shareText = _msgs[Math.floor(Math.random()*_msgs.length)] + '\n#KAS21 #Kaspa #Blackjack #Crypto';
+
+  // On desktop: open Twitter immediately (sync, trusted event context)
+  const isMobile = navigator.share && navigator.canShare;
+  if(!isMobile){
+    window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(_shareText),'_blank','noopener');
+    toast('Tweet ready! Attach the image when it downloads 🎴');
+  }
+
+  const W=600, H=960;
   const c = document.createElement('canvas');
   c.width=W; c.height=H;
   const x = c.getContext('2d');
 
-  const KAS='#49EACB', GOLD='#F5C842', RED='#F05365', MUT='#4a5568', WHT='#e2e8f0';
-  const mainCol = {bj:GOLD, win:KAS, lose:RED, push:GOLD}[h.main];
+  const KAS='#49EACB', GOLD='#F5C842', RED='#F05365', MUT='#5a6a7e', WHT='#e2e8f0', DARK='#04080D';
+  const mainCol = h.main==='bj' ? GOLD : KAS;
   const sign = h.net>=0?'+':'';
+  const label={bj:'BLACKJACK!',win:'YOU WIN'}[h.main];
+  const PLAY_URL = 'kas21.io'; // placeholder — update when live
 
-  // ── Background ──
-  const bg = x.createRadialGradient(W/2, H*0.35, 0, W/2, H*0.5, W*1.1);
-  bg.addColorStop(0,'#061510'); bg.addColorStop(1,'#04080D');
-  x.fillStyle=bg; x.fillRect(0,0,W,H);
+  // ── Background: deep dark with radial glow ──
+  x.fillStyle=DARK; x.fillRect(0,0,W,H);
 
-  // Felt texture grid
-  x.strokeStyle='rgba(255,255,255,0.015)'; x.lineWidth=1;
-  for(let i=0;i<W;i+=32){x.beginPath();x.moveTo(i,0);x.lineTo(i,H);x.stroke();}
-  for(let i=0;i<H;i+=32){x.beginPath();x.moveTo(0,i);x.lineTo(W,i);x.stroke();}
+  // Center radial glow (color of result)
+  const glow = x.createRadialGradient(W/2, H*0.38, 0, W/2, H*0.38, W*0.85);
+  glow.addColorStop(0, mainCol+'22');
+  glow.addColorStop(0.5, mainCol+'08');
+  glow.addColorStop(1, 'transparent');
+  x.fillStyle=glow; x.fillRect(0,0,W,H);
 
-  // Top glow
-  const topGlow=x.createLinearGradient(0,0,0,180);
-  topGlow.addColorStop(0,mainCol+'33'); topGlow.addColorStop(1,'transparent');
-  x.fillStyle=topGlow; x.fillRect(0,0,W,180);
+  // Subtle dot-grid texture
+  x.fillStyle='rgba(255,255,255,0.018)';
+  for(let r=0;r<H;r+=28) for(let cc=0;cc<W;cc+=28){
+    x.beginPath(); x.arc(cc,r,1,0,Math.PI*2); x.fill();
+  }
 
-  // Outer border
-  x.strokeStyle=mainCol+'55'; x.lineWidth=2;
-  x.strokeRect(14,14,W-28,H-28);
-  // Inner border
-  x.strokeStyle=mainCol+'18'; x.lineWidth=1;
-  x.strokeRect(20,20,W-40,H-40);
-
-  // ── Header ──
-  x.font='900 20px "Courier New",monospace'; x.fillStyle=KAS; x.textAlign='left';
-  x.shadowColor=KAS; x.shadowBlur=16;
-  x.fillText('KAS · 21', 36, 56);
+  // ── Outer frame ──
+  // Thick glowing border
+  x.shadowColor=mainCol; x.shadowBlur=24;
+  x.strokeStyle=mainCol+'99'; x.lineWidth=2.5;
+  x.strokeRect(16,16,W-32,H-32);
   x.shadowBlur=0;
-  x.font='500 11px monospace'; x.fillStyle=MUT;
-  x.fillText('BLACKJACK ON KASPA', 36, 74);
+  x.strokeStyle=mainCol+'1a'; x.lineWidth=1;
+  x.strokeRect(22,22,W-44,H-44);
 
-  // Nickname top-right
-  const nick=getNick(G.wallet.addr);
-  const nameStr=String(nick||G.wallet.addr||'').replace(/[<>&"']/g,'').slice(0,18)+((!nick&&G.wallet.addr.length>14)?'…':'');
-  x.font='500 11px monospace'; x.fillStyle=MUT; x.textAlign='right';
-  x.fillText(nameStr, W-36, 56);
-
-  // ── Result label ──
-  const label={bj:'BLACKJACK!',win:'YOU WIN',lose:'BUST',push:'PUSH'}[h.main];
-  x.font='900 52px "Courier New",monospace'; x.fillStyle=mainCol; x.textAlign='center';
-  x.shadowColor=mainCol; x.shadowBlur=36;
-  x.fillText(label, W/2, 148);
+  // Corner accents
+  const ca=28; // corner accent size
+  [[16,16],[W-16,16],[16,H-16],[W-16,H-16]].forEach(([cx2,cy2],i)=>{
+    const sx=i%2===0?1:-1, sy=i<2?1:-1;
+    x.strokeStyle=mainCol; x.lineWidth=2.5; x.shadowColor=mainCol; x.shadowBlur=10;
+    x.beginPath(); x.moveTo(cx2+sx*ca,cy2); x.lineTo(cx2,cy2); x.lineTo(cx2,cy2+sy*ca); x.stroke();
+  });
   x.shadowBlur=0;
 
-  // ── Net amount ──
-  x.font='900 72px "Courier New",monospace'; x.fillStyle=mainCol; x.textAlign='center';
-  x.shadowColor=mainCol; x.shadowBlur=28;
-  x.fillText(`${sign}${h.net.toLocaleString()}`, W/2, 228);
-  x.shadowBlur=0;
-  x.font='700 28px "Courier New",monospace'; x.fillStyle=mainCol+'bb';
-  x.fillText('KAS', W/2, 264);
-
-  // ── Divider ──
+  // ── Header bar ──
+  x.fillStyle='rgba(73,234,203,0.05)';
+  x.fillRect(0,0,W,70);
   x.strokeStyle=mainCol+'22'; x.lineWidth=1;
-  x.beginPath(); x.moveTo(36,290); x.lineTo(W-36,290); x.stroke();
+  x.beginPath(); x.moveTo(0,70); x.lineTo(W,70); x.stroke();
 
-  // ── Cards helper ──
-  function card(cx, cy, rank, suit, cw=80, ch=112){
+  // Logo left
+  x.font='900 18px "Courier New",monospace'; x.fillStyle=KAS; x.textAlign='left';
+  x.shadowColor=KAS; x.shadowBlur=14;
+  x.fillText('⬡  KAS·21', 36, 44);
+  x.shadowBlur=0;
+  x.font='500 10px monospace'; x.fillStyle=MUT;
+  x.fillText('KASPA BLACKJACK', 36, 60);
+
+  // Player name right
+  const nick=getNick(G.wallet.addr);
+  const rawName=String(nick||G.wallet.addr||'');
+  const nameStr=rawName.replace(/[<>&]/g,'').slice(0,18);
+  x.font='600 11px "Courier New",monospace'; x.fillStyle=MUT; x.textAlign='right';
+  x.fillText(nameStr, W-36, 44);
+  x.font='500 9px monospace'; x.fillStyle=MUT+'88';
+  x.fillText('PLAYER', W-36, 58);
+
+  // ── WIN Banner ──
+  // Background pill
+  const pillY=90, pillH=90;
+  x.fillStyle=mainCol+'12';
+  x.beginPath(); x.roundRect(36,pillY,W-72,pillH,14); x.fill();
+  x.strokeStyle=mainCol+'40'; x.lineWidth=1.5;
+  x.beginPath(); x.roundRect(36,pillY,W-72,pillH,14); x.stroke();
+
+  x.font='900 54px "Courier New",monospace'; x.fillStyle=mainCol; x.textAlign='center';
+  x.shadowColor=mainCol; x.shadowBlur=40;
+  x.fillText(label, W/2, pillY+63);
+  x.shadowBlur=0;
+
+  // ── Win Amount — massive ──
+  const amtY=230;
+  // glow backdrop circle
+  const amtGlow=x.createRadialGradient(W/2,amtY,0,W/2,amtY,180);
+  amtGlow.addColorStop(0,mainCol+'28'); amtGlow.addColorStop(1,'transparent');
+  x.fillStyle=amtGlow; x.fillRect(W/2-200,amtY-80,400,120);
+
+  x.font='900 96px "Courier New",monospace'; x.fillStyle=mainCol; x.textAlign='center';
+  x.shadowColor=mainCol; x.shadowBlur=50;
+  x.fillText(`${sign}${h.net.toLocaleString()}`, W/2, amtY+20);
+  x.shadowBlur=0;
+
+  // KAS label under amount
+  x.font='700 22px "Courier New",monospace'; x.fillStyle=mainCol+'cc'; x.textAlign='center';
+  x.fillText('KAS', W/2, amtY+56);
+
+  // ── Thin divider ──
+  const div1Y=amtY+82;
+  x.strokeStyle=mainCol+'20'; x.lineWidth=1;
+  x.beginPath(); x.moveTo(60,div1Y); x.lineTo(W-60,div1Y); x.stroke();
+  x.font='500 10px monospace'; x.fillStyle=MUT+'66'; x.textAlign='center';
+  x.fillText('♠  ♥  ♦  ♣', W/2, div1Y-4);
+
+  // ── Cards ──
+  function card(cx, cy, rank, suit, cw=74, ch=106){
     const isRed=['♥','♦'].includes(suit);
     x.save();
-    // card shadow
-    x.shadowColor='rgba(0,0,0,0.5)'; x.shadowBlur=12; x.shadowOffsetY=4;
-    x.fillStyle='#f0f2f0';
+    x.shadowColor='rgba(0,0,0,0.6)'; x.shadowBlur=14; x.shadowOffsetY=5;
+    x.fillStyle='#f2f4f2';
     const r=8;
     x.beginPath();
     x.moveTo(cx+r,cy); x.lineTo(cx+cw-r,cy); x.arcTo(cx+cw,cy,cx+cw,cy+r,r);
@@ -2707,112 +2848,129 @@ function shareToX(){
     x.lineTo(cx+r,cy+ch); x.arcTo(cx,cy+ch,cx,cy+ch-r,r);
     x.lineTo(cx,cy+r); x.arcTo(cx,cy,cx+r,cy,r); x.closePath(); x.fill();
     x.shadowBlur=0;
-    // border
-    x.strokeStyle='rgba(0,0,0,0.1)'; x.lineWidth=1; x.stroke();
-    // rank top-left
-    x.fillStyle=isRed?'#d02040':'#111827';
-    x.font=`800 ${Math.round(cw*0.27)}px Georgia,serif`; x.textAlign='left';
-    x.fillText(rank, cx+7, cy+Math.round(cw*0.3));
-    // suit center
-    x.font=`${Math.round(cw*0.4)}px Georgia,serif`; x.textAlign='center';
+    x.strokeStyle='rgba(0,0,0,0.08)'; x.lineWidth=1; x.stroke();
+    x.fillStyle=isRed?'#cc1a2e':'#0f172a';
+    x.font=`800 ${Math.round(cw*0.26)}px Georgia,serif`; x.textAlign='left';
+    x.fillText(rank, cx+6, cy+Math.round(cw*0.29));
+    x.font=`${Math.round(cw*0.38)}px Georgia,serif`; x.textAlign='center';
     x.fillText(suit, cx+cw/2, cy+ch*0.64);
     x.restore();
   }
 
-  // ── Dealer section ──
-  const cW=76, cH=108, gap=10;
+  const cW=74, cH=106, cGap=10;
   const dCards=G.dealer, pCards=G.player[0];
-  const dX = Math.max(36, (W - dCards.length*(cW+gap)+gap)/2);
-  const pX = Math.max(36, (W - pCards.length*(cW+gap)+gap)/2);
 
-  // Dealer label + badge
-  x.font='700 12px "Courier New",monospace'; x.fillStyle=MUT; x.textAlign='left';
-  x.fillText('DEALER', 36, 318);
-  // Total badge
-  const dtCol = h.dealerTotal>21?RED:WHT;
-  x.fillStyle=h.dealerTotal>21?'rgba(240,83,101,0.15)':'rgba(255,255,255,0.06)';
-  x.beginPath(); x.roundRect(W-80,304,56,22,6); x.fill();
-  x.font='700 14px "Courier New",monospace'; x.fillStyle=dtCol; x.textAlign='center';
-  x.fillText(h.dealerTotal, W-52, 320);
+  const cardsTop = div1Y+18;
 
-  dCards.forEach((cd,i)=>card(dX+i*(cW+gap), 328, cd.r, cd.s, cW, cH));
+  // Dealer row
+  x.font='600 10px "Courier New",monospace'; x.fillStyle=MUT; x.textAlign='left';
+  x.fillText('DEALER', 40, cardsTop+12);
+  const dtBadgeCol=h.dealerTotal>21?RED:WHT;
+  x.font='700 13px "Courier New",monospace'; x.fillStyle=dtBadgeCol; x.textAlign='right';
+  x.fillText(h.dealerTotal, W-40, cardsTop+12);
+  const dX=Math.max(40,(W-dCards.length*(cW+cGap)+cGap)/2);
+  dCards.forEach((cd,i)=>card(dX+i*(cW+cGap), cardsTop+18, cd.r, cd.s));
 
-  // Divider between dealer/player
-  x.strokeStyle='rgba(73,234,203,0.12)'; x.lineWidth=1;
-  x.beginPath(); x.moveTo(36,328+cH+16); x.lineTo(W-36,328+cH+16); x.stroke();
-  // KAS·21 watermark on divider
-  x.font='500 10px "Courier New",monospace'; x.fillStyle=MUT; x.textAlign='center';
-  x.fillText('♠  ♥  KAS·21  ♦  ♣', W/2, 328+cH+12);
+  // Dealer/Player divider
+  const midY=cardsTop+18+cH+14;
+  x.strokeStyle='rgba(73,234,203,0.1)'; x.lineWidth=1;
+  x.beginPath(); x.moveTo(60,midY); x.lineTo(W-60,midY); x.stroke();
 
-  // Player label + badge
-  const pBase=328+cH+32;
-  x.font='700 12px "Courier New",monospace'; x.fillStyle=MUT; x.textAlign='left';
-  x.fillText('PLAYER', 36, pBase+4);
-  const ptCol = h.playerTotal>21?RED:mainCol;
-  x.fillStyle=h.playerTotal>21?'rgba(240,83,101,0.15)':mainCol+'22';
-  x.beginPath(); x.roundRect(W-80,pBase-10,56,22,6); x.fill();
-  x.font='700 14px "Courier New",monospace'; x.fillStyle=ptCol; x.textAlign='center';
-  x.fillText(h.playerTotal, W-52, pBase+6);
+  // Player row
+  const pBase=midY+16;
+  x.font='600 10px "Courier New",monospace'; x.fillStyle=mainCol+'99'; x.textAlign='left';
+  x.fillText('PLAYER', 40, pBase+12);
+  const ptBadgeCol=h.playerTotal>21?RED:mainCol;
+  x.font='700 13px "Courier New",monospace'; x.fillStyle=ptBadgeCol; x.textAlign='right';
+  x.fillText(h.playerTotal, W-40, pBase+12);
+  const pX=Math.max(40,(W-pCards.length*(cW+cGap)+cGap)/2);
+  pCards.forEach((cd,i)=>card(pX+i*(cW+cGap), pBase+18, cd.r, cd.s));
 
-  pCards.forEach((cd,i)=>card(pX+i*(cW+gap), pBase+14, cd.r, cd.s, cW, cH));
+  // ── Stats bar ──
+  const statsTop=pBase+18+cH+20;
+  x.fillStyle='rgba(255,255,255,0.03)';
+  x.beginPath(); x.roundRect(36,statsTop,W-72,56,10); x.fill();
+  x.strokeStyle=mainCol+'18'; x.lineWidth=1;
+  x.beginPath(); x.roundRect(36,statsTop,W-72,56,10); x.stroke();
 
-  // ── Stats row ──
-  const statsY = pBase+14+cH+32;
-  x.strokeStyle='rgba(73,234,203,0.2)'; x.lineWidth=1;
-  x.beginPath(); x.moveTo(36,statsY); x.lineTo(W-36,statsY); x.stroke();
-
-  function stat(label2, val, col, sx, sy){
-    x.font='500 10px monospace'; x.fillStyle=MUT; x.textAlign='center';
-    x.fillText(label2, sx, sy);
-    x.font='700 16px "Courier New",monospace'; x.fillStyle=col; x.textAlign='center';
-    x.fillText(val, sx, sy+22);
+  function statBox(lbl,val,col,sx){
+    x.font='500 9px monospace'; x.fillStyle=MUT; x.textAlign='center';
+    x.fillText(lbl, sx, statsTop+18);
+    x.font='700 15px "Courier New",monospace'; x.fillStyle=col; x.textAlign='center';
+    x.fillText(val, sx, statsTop+38);
   }
 
-  const hasSb = h.sbNet!==0;
+  const hasSb=h.sbNet!==0;
   if(hasSb){
-    const cols=3, colW=W/cols;
-    stat('BET',      'KAS '+h.bet.toLocaleString(),  WHT,  colW*0.5, statsY+18);
-    stat('HAND',     (h.handNet>=0?'+':'')+h.handNet, h.handNet>=0?KAS:RED, colW*1.5, statsY+18);
-    stat('SIDE BETS',(h.sbNet>=0?'+':'')+h.sbNet,  h.sbNet>=0?GOLD:RED,   colW*2.5, statsY+18);
+    const cw4=W/4;
+    statBox('BET','KAS '+h.bet,WHT,cw4*0.5);
+    statBox('HAND',(h.handNet>=0?'+':'')+h.handNet,h.handNet>=0?KAS:RED,cw4*1.5);
+    statBox('SIDE',(h.sbNet>=0?'+':'')+h.sbNet,h.sbNet>=0?GOLD:RED,cw4*2.5);
+    statBox('BAL','KAS '+h.balance,KAS,cw4*3.5);
   } else {
-    const cols=2, colW=W/cols;
-    stat('BET',     'KAS '+h.bet.toLocaleString(), WHT, colW*0.5, statsY+18);
-    stat('BALANCE', 'KAS '+h.balance.toLocaleString(), KAS, colW*1.5, statsY+18);
+    const cw3=W/3;
+    statBox('BET','KAS '+h.bet,WHT,cw3*0.5);
+    statBox('NET',(h.net>=0?'+':'')+h.net,mainCol,cw3*1.5);
+    statBox('BALANCE','KAS '+h.balance,KAS,cw3*2.5);
   }
 
-  // Balance if side bets shown
-  if(hasSb){
-    x.strokeStyle='rgba(73,234,203,0.1)'; x.lineWidth=1;
-    x.beginPath(); x.moveTo(36,statsY+52); x.lineTo(W-36,statsY+52); x.stroke();
-    x.font='500 11px monospace'; x.fillStyle=MUT; x.textAlign='left';
-    x.fillText('BALANCE', 36, statsY+70);
-    x.font='700 16px "Courier New",monospace'; x.fillStyle=KAS; x.textAlign='right';
-    x.fillText('KAS '+h.balance.toLocaleString(), W-36, statsY+70);
-  }
+  // ── CTA — Play Link ──
+  const ctaY=statsTop+70;
+  // Background pill
+  x.fillStyle=mainCol+'14';
+  x.beginPath(); x.roundRect(36,ctaY,W-72,62,12); x.fill();
+  x.strokeStyle=mainCol+'50'; x.lineWidth=1.5;
+  x.shadowColor=mainCol; x.shadowBlur=12;
+  x.beginPath(); x.roundRect(36,ctaY,W-72,62,12); x.stroke();
+  x.shadowBlur=0;
+
+  x.font='700 13px "Courier New",monospace'; x.fillStyle=mainCol; x.textAlign='center';
+  x.shadowColor=mainCol; x.shadowBlur=8;
+  x.fillText('🎴  PLAY NOW  →  kas21.io', W/2, ctaY+24);
+  x.shadowBlur=0;
+  x.font='500 10px monospace'; x.fillStyle=MUT; x.textAlign='center';
+  x.fillText('Blackjack on Kaspa blockchain  •  Real KAS  •  Instant payouts', W/2, ctaY+44);
 
   // ── Footer ──
-  x.strokeStyle='rgba(73,234,203,0.15)'; x.lineWidth=1;
-  x.beginPath(); x.moveTo(36,H-44); x.lineTo(W-44,H-44); x.stroke();
-  x.font='500 11px monospace'; x.fillStyle=MUT+'aa'; x.textAlign='center';
-  x.fillText('#KAS21  •  #Kaspa  •  #Blackjack', W/2, H-24);
+  x.strokeStyle=mainCol+'15'; x.lineWidth=1;
+  x.beginPath(); x.moveTo(36,H-36); x.lineTo(W-36,H-36); x.stroke();
+  x.font='500 10px monospace'; x.fillStyle=MUT+'88'; x.textAlign='center';
+  x.fillText('#KAS21  •  #Kaspa  •  #Blackjack  •  #Play2Earn', W/2, H-16);
 
   // ── Output ──
   c.toBlob(blob=>{
     const blobUrl=URL.createObjectURL(blob);
-    // Try Web Share API first (works on mobile for direct sharing)
-    if(navigator.share && navigator.canShare && navigator.canShare({files:[new File([blob],'kas21-hand.png',{type:'image/png'})]})){
+    const winMsgs = [
+      `💰 Just won +${h.net.toLocaleString()} KAS playing Blackjack on Kaspa! 🃏
+Come get yours → kas21.io`,
+      `🤑 +${h.net.toLocaleString()} KAS richer after one hand of KAS·21! 🎰
+Play Blackjack on Kaspa → kas21.io`,
+      `🔥 Blackjack pays in real KAS! Just pocketed +${h.net.toLocaleString()} KAS 💸
+→ kas21.io`,
+      `💎 +${h.net.toLocaleString()} KAS won on KAS·21 — the only Blackjack that pays in Kaspa! 🃏
+Play now → kas21.io`,
+    ];
+    const bjMsgs = [
+      `🃏 BLACKJACK! +${h.net.toLocaleString()} KAS in one shot 💰
+Real KAS, real winnings → kas21.io`,
+      `👑 BLACKJACK pays 3:2 in real KAS! Just won +${h.net.toLocaleString()} KAS 🤑
+→ kas21.io`,
+    ];
+    const msgs = h.main==='bj' ? bjMsgs : winMsgs;
+    const shareLabel = msgs[Math.floor(Math.random()*msgs.length)];
+    const shareTags = '\n#KAS21 #Kaspa #Blackjack #Crypto';
+    const shareText = shareLabel+shareTags;
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[new File([blob],'kas21-win.png',{type:'image/png'})]})){
       navigator.share({
         title:'KAS·21 — '+label,
-        text:`${sign}${h.net.toLocaleString()} KAS on KAS·21 Blackjack\n#KAS21 #Kaspa #Blackjack`,
-        files:[new File([blob],'kas21-hand.png',{type:'image/png'})]
+        text:shareText,
+        files:[new File([blob],'kas21-win.png',{type:'image/png'})]
       }).catch(()=>{});
     } else {
-      // Desktop: download + open Twitter
       const a=document.createElement('a');
-      a.href=blobUrl; a.download='kas21-hand.png'; a.click();
-      const txt=`${sign}${h.net.toLocaleString()} KAS on KAS·21 Blackjack\n#KAS21 #Kaspa #Blackjack`;
+      a.href=blobUrl; a.download='kas21-win.png'; a.click();
       setTimeout(()=>{
-        window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(txt),'_blank','noopener');
+        window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(shareText),'_blank','noopener');
         URL.revokeObjectURL(blobUrl);
       },500);
       toast('Image saved — attach to your tweet! 🎴');
