@@ -1,0 +1,2856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob: https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none';">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KAS·21 — Kaspa Blackjack</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  --kas:      #49EACB;
+  --kas-dim:  rgba(73,234,203,0.12);
+  --kas-glow: 0 0 22px rgba(73,234,203,0.5), 0 0 55px rgba(73,234,203,0.15);
+  --red:      #F05365;
+  --red-glow: 0 0 18px rgba(240,83,101,0.5);
+  --gold:     #F5C842;
+  --gold-glow:0 0 18px rgba(245,200,66,0.5);
+  --purple:   #A78BFA;
+  --bg:       #04080D;
+  --felt:     #060F1A;
+  --panel:    #0A1828;
+  --panel2:   #0D1F30;
+  --border:   rgba(73,234,203,0.2);
+  --border2:  rgba(73,234,203,0.09);
+  --text:     #D4EDE9;
+  --muted:    rgba(180,220,215,0.36);
+  --card-bg:  #F0F5F3;
+  --r: 8px;
+  --hh: 58px; /* header height */
+  --nb: 56px; /* nav bar height (mobile) */
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { height:100%; }
+body {
+  height:100%; min-height:100%;
+  font-family:'JetBrains Mono',monospace;
+  background:var(--bg); color:var(--text);
+  overflow:hidden; user-select:none;
+}
+
+/* grid bg */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(73,234,203,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(73,234,203,0.025) 1px, transparent 1px);
+  background-size:48px 48px;
+}
+/* radial glow */
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background: radial-gradient(ellipse at 50% 20%, rgba(73,234,203,0.05) 0%, transparent 60%);
+}
+
+/* scanline */
+.scanline {
+  position:fixed; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(73,234,203,0.2),transparent);
+  animation:scan 7s linear infinite; pointer-events:none; z-index:9999;
+}
+@keyframes scan { from{top:0} to{top:100vh} }
+
+/* ═══════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════ */
+header {
+  position:fixed; top:0; left:0; right:0; height:var(--hh); z-index:200;
+  display:flex; align-items:center; justify-content:space-between; padding:0 14px;
+  background:rgba(4,8,13,0.97); border-bottom:1px solid var(--border);
+  backdrop-filter:blur(16px); gap:10px;
+}
+.logo { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.logo svg { width:26px; height:26px; flex-shrink:0; }
+.logo-name {
+  font-family:'Orbitron',sans-serif; font-weight:900; font-size:1rem;
+  color:var(--kas); text-shadow:var(--kas-glow); letter-spacing:1.5px;
+  white-space:nowrap;
+}
+.logo-tag { font-size:0.48rem; color:var(--muted); letter-spacing:2.5px; }
+
+.hdr-center {
+  display:flex; gap:20px; align-items:center;
+}
+.tick { font-size:0.65rem; color:var(--muted); }
+.tick b { color:var(--kas); }
+
+.hdr-right { display:flex; align-items:center; gap:7px; flex-shrink:0; }
+
+.bal-pill {
+  display:flex; align-items:center; gap:4px;
+  background:var(--kas-dim); border:1px solid var(--border);
+  border-radius:100px; padding:4px 11px;
+  font-family:'Orbitron',sans-serif; font-size:0.72rem; font-weight:700; color:var(--kas);
+  white-space:nowrap;
+}
+.bal-unit { font-size:0.5rem; color:rgba(73,234,203,0.6); font-weight:600; letter-spacing:1px; }
+
+#walletBtn {
+  display:flex; align-items:center; gap:6px;
+  background:transparent; border:1px solid rgba(73,234,203,0.35); border-radius:100px;
+  padding:5px 11px; color:var(--kas);
+  font-family:'JetBrains Mono',monospace; font-size:0.64rem; font-weight:600;
+  cursor:pointer; transition:all 0.2s; max-width:140px; overflow:hidden;
+}
+#walletBtn span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#walletBtn:hover { background:rgba(73,234,203,0.2); box-shadow:var(--kas-glow); }
+#walletBtn.on { border-color:var(--kas); }
+
+.wdot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--muted); transition:all 0.3s; flex-shrink:0;
+}
+.wdot.live { background:var(--kas); box-shadow:0 0 7px var(--kas); animation:blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ═══════════════════════════════════════════════
+   DESKTOP LAYOUT  (≥ 860px)
+═══════════════════════════════════════════════ */
+.game-wrap {
+  position:fixed; top:var(--hh); left:0; right:0; bottom:0;
+  display:grid;
+  grid-template-columns:1fr 272px;
+  z-index:1; overflow:hidden;
+}
+
+/* felt table */
+.table {
+  position:relative; display:flex; flex-direction:column;
+  background: radial-gradient(ellipse at 50% 25%, rgba(73,234,203,0.055) 0%, transparent 65%), var(--felt);
+  overflow:hidden;
+}
+.table::after {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='1' height='1' fill='rgba(255,255,255,0.012)'/%3E%3C/svg%3E");
+}
+
+/* zones */
+.dealer-zone  { flex:0 0 auto; padding:22px 32px 16px; position:relative; z-index:2; }
+.divider {
+  flex:0 0 auto; margin:0 32px; height:1px;
+  background:linear-gradient(90deg,transparent,var(--border),transparent); position:relative;
+}
+.divider::before {
+  content:'♠  ♥  KAS·21  ♦  ♣';
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  background:var(--felt); padding:0 14px;
+  font-size:0.55rem; color:var(--border); letter-spacing:3px; white-space:nowrap;
+}
+.player-zone  { flex:0 0 auto; padding:16px 32px 12px; position:relative; z-index:2; }
+.action-bar   {
+  flex:1; display:flex; flex-direction:column; justify-content:flex-end;
+  padding:0 32px 18px; gap:12px; position:relative; z-index:2;
+}
+
+/* zone label */
+.zlabel {
+  font-family:'Orbitron',sans-serif; font-size:0.56rem; letter-spacing:4px;
+  color:var(--muted); margin-bottom:10px;
+  display:flex; align-items:center; gap:10px;
+}
+.zlabel::after { content:''; flex:1; height:1px; background:var(--border2); }
+
+/* score badge */
+.sbadge {
+  display:inline-flex; align-items:center; gap:7px;
+  background:var(--panel); border:1px solid var(--border); border-radius:100px;
+  padding:5px 16px; margin-bottom:12px;
+  font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:900; color:var(--kas);
+  text-shadow:0 0 12px currentColor;
+  transition:all 0.2s;
+}
+.sbadge.bust { color:var(--red); border-color:var(--red); box-shadow:var(--red-glow); }
+.sbadge.bj   { color:var(--gold); border-color:var(--gold); box-shadow:var(--gold-glow); }
+.sbadge .soft { font-size:0.7rem; color:rgba(73,234,203,0.5); letter-spacing:3px; font-weight:700; text-shadow:none; margin-left:3px; }
+
+/* ── CARDS ── */
+.cards-row {
+  display:flex; gap:10px; min-height:120px; align-items:center;
+  flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px;
+}
+.cards-row::-webkit-scrollbar { height:3px; }
+.cards-row::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+.card {
+  width:82px; height:116px; border-radius:9px; flex-shrink:0; position:relative;
+  animation:dealCard 0.38s cubic-bezier(0.22,1,0.36,1) both;
+  box-shadow:0 5px 20px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3);
+}
+@keyframes dealCard {
+  from { opacity:0; transform:translateY(-24px) scale(0.88); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+
+.card-face {
+  width:100%; height:100%; border-radius:9px;
+  background:var(--card-bg); border:1px solid rgba(255,255,255,0.6);
+  display:flex; flex-direction:column; padding:7px; overflow:hidden;
+}
+.card-tl { display:flex; flex-direction:column; align-items:flex-start; line-height:1.05; }
+.card-br {
+  display:flex; flex-direction:column; align-items:flex-end; line-height:1.05;
+  position:absolute; bottom:7px; right:7px; transform:rotate(180deg);
+}
+.card-r  { font-family:'Orbitron',sans-serif; font-weight:900; font-size:0.88rem; }
+.card-s  { font-size:0.9rem; line-height:1; }
+.card-center { flex:1; display:flex; align-items:center; justify-content:center; font-size:2.1rem; }
+.suit-r .card-r,.suit-r .card-s,.suit-r .card-center { color:#CC2233; }
+.suit-b .card-r,.suit-b .card-s,.suit-b .card-center { color:#111827; }
+
+.card-back {
+  width:100%; height:100%; border-radius:9px;
+  background:var(--panel2); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;
+}
+.card-back::before {
+  content:''; position:absolute; inset:5px; border-radius:6px;
+  border:1px solid rgba(73,234,203,0.18);
+  background:repeating-linear-gradient(45deg,
+    rgba(73,234,203,0.04) 0,rgba(73,234,203,0.04) 2px,
+    transparent 2px,transparent 8px);
+}
+.card-back::after { content:'⬡'; font-size:1.8rem; color:rgba(73,234,203,0.2); position:relative; z-index:1; }
+
+/* ── RESULT PANEL ── */
+#resultPanel {
+  display:none; align-items:center; gap:16px;
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r);
+  padding:14px 18px; position:relative; overflow:hidden;
+  animation:slideUp 0.38s cubic-bezier(0.34,1.4,0.64,1) both;
+}
+#resultPanel::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:var(--rp-col, var(--kas));
+}
+#resultPanel.show { display:flex; }
+@keyframes slideUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+.rp-icon { font-size:2.1rem; flex-shrink:0; }
+.rp-texts { flex:1; min-width:0; }
+.rp-title {
+  font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.2rem;
+  letter-spacing:2px; line-height:1; margin-bottom:3px;
+}
+.rp-title.win  { color:var(--kas); text-shadow:var(--kas-glow); }
+.rp-title.lose { color:var(--red); text-shadow:var(--red-glow); }
+.rp-title.push { color:var(--gold); }
+.rp-title.bj   { color:var(--gold); text-shadow:var(--gold-glow); }
+.rp-amt  { font-family:'Orbitron',sans-serif; font-size:0.9rem; font-weight:700; }
+.rp-sub  { font-size:0.58rem; color:var(--muted); margin-top:2px; }
+.rp-btns { display:flex; flex-direction:column; gap:7px; flex-shrink:0; }
+.rp-btn  {
+  padding:10px 16px; border-radius:var(--r); border:1px solid;
+  font-family:'Orbitron',sans-serif; font-size:0.62rem; font-weight:900; letter-spacing:1.5px;
+  cursor:pointer; transition:all 0.15s; white-space:nowrap;
+}
+.rp-next   { color:var(--kas); border-color:var(--kas); background:var(--kas-dim); }
+.rp-next:hover   { box-shadow:var(--kas-glow); background:rgba(73,234,203,0.2); }
+.rp-repeat { color:var(--gold); border-color:var(--gold); background:rgba(245,200,66,0.08); }
+.rp-repeat:hover { box-shadow:var(--gold-glow); }
+.rp-share  { color:#1d9bf0; border-color:#1d9bf0; background:rgba(29,155,240,0.08); }
+.rp-share:hover  { background:rgba(29,155,240,0.18); box-shadow:0 0 18px rgba(29,155,240,0.4); }
+
+/* Nickname badge in leaderboard */
+.lb-nick { color:var(--kas); font-weight:700; font-size:0.8rem; }
+.lb-addr { color:var(--muted); font-size:0.7rem; font-family:monospace; }
+
+/* Nickname modal */
+.nick-modal-wrap {
+  position:fixed; inset:0; background:rgba(4,8,13,0.88); z-index:9999;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.nick-modal {
+  background:var(--card); border:1px solid var(--border); border-radius:14px;
+  padding:28px 24px; width:100%; max-width:340px; display:flex; flex-direction:column; gap:16px;
+}
+.nick-modal h3 {
+  font-family:'Orbitron',sans-serif; font-size:0.8rem; letter-spacing:3px;
+  color:var(--kas); margin:0;
+}
+.nick-modal p { font-size:0.68rem; color:var(--muted); margin:0; line-height:1.6; }
+.nick-input {
+  background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  border-radius:8px; padding:10px 14px; color:var(--text);
+  font-size:0.85rem; width:100%; box-sizing:border-box; outline:none;
+  transition:border-color 0.2s;
+}
+.nick-input:focus { border-color:var(--kas); }
+.nick-btns { display:flex; gap:10px; }
+.nick-save { flex:1; padding:10px; border-radius:8px; border:1px solid var(--kas);
+  background:var(--kas-dim); color:var(--kas); font-family:'Orbitron',sans-serif;
+  font-size:0.7rem; letter-spacing:2px; cursor:pointer; transition:all 0.2s; }
+.nick-save:hover { background:rgba(73,234,203,0.2); box-shadow:var(--kas-glow); }
+.nick-cancel { padding:10px 16px; border-radius:8px; border:1px solid var(--border);
+  background:transparent; color:var(--muted); font-size:0.7rem; cursor:pointer; }
+.nick-cancel:hover { border-color:var(--border); color:var(--text); }
+
+/* ── PHASE HINT ── */
+.phase-hint {
+  text-align:center; font-size:0.66rem; color:var(--muted); letter-spacing:2px; min-height:16px;
+  transition:all 0.3s;
+}
+.phase-hint.active { color:var(--kas); }
+
+/* ── SIDE BETS ROW ── */
+.sb-row {
+  display:flex; align-items:stretch; gap:6px;
+  padding:8px 12px; margin-bottom:4px;
+  background:rgba(167,139,250,0.04); border:1px solid rgba(167,139,250,0.18);
+  border-radius:var(--r); overflow-x:auto; scrollbar-width:none;
+}
+.sb-row::-webkit-scrollbar { display:none; }
+
+.sb-row-label {
+  font-family:'Orbitron',sans-serif; font-size:0.44rem; letter-spacing:3px;
+  color:rgba(167,139,250,0.6); writing-mode:vertical-rl; text-orientation:mixed;
+  transform:rotate(180deg); flex-shrink:0; padding:4px 0; align-self:center;
+}
+
+.sb-pill {
+  flex:1; min-width:78px; max-width:120px;
+  background:var(--panel); border:1px solid var(--border2); border-radius:var(--r);
+  padding:5px 6px 6px; cursor:default; transition:border-color 0.15s;
+  position:relative; overflow:hidden;
+  display:grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap:2px;
+}
+.sb-pill:hover { border-color:rgba(167,139,250,0.4); }
+.sb-pill.active { border-color:var(--purple); background:rgba(167,139,250,0.08); }
+.sb-pill.locked { opacity:0.55; pointer-events:none; }
+.sb-pill.won { border-color:var(--gold); background:rgba(245,200,66,0.07); animation:sbWin 0.4s ease; }
+.sb-pill.lost { opacity:0.45; }
+@keyframes sbWin { 0%,100%{transform:scale(1)} 45%{transform:scale(1.03)} }
+
+.sb-pill-top {
+  display:flex; flex-direction:column; gap:2px;
+}
+.sb-pill-name {
+  font-family:'Orbitron',sans-serif; font-size:0.52rem; font-weight:700;
+  letter-spacing:1px; color:var(--text);
+}
+.sb-pill-odds {
+  font-family:'Orbitron',sans-serif; font-size:0.55rem; font-weight:700;
+  color:var(--purple); letter-spacing:0.5px; white-space:nowrap;
+}
+.sb-pill.active .sb-pill-odds { color:var(--gold); }
+
+.sb-pill-amt {
+  font-family:'Orbitron',sans-serif; font-size:0.82rem; font-weight:900;
+  color:var(--muted); line-height:1;
+}
+.sb-pill-amt.placed { color:var(--purple); text-shadow:0 0 8px rgba(167,139,250,0.5); }
+.sb-pill.won .sb-pill-amt { color:var(--gold); }
+
+.sb-pill-chips { display:flex; gap:4px; align-items:center; align-self:end; }
+.sb-chip {
+  width:22px; height:22px; border-radius:50%; border:1.5px solid rgba(167,139,250,0.5);
+  font-family:'Orbitron',sans-serif; font-size:0.38rem; font-weight:900;
+  color:var(--purple); background:transparent;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all 0.12s; flex-shrink:0;
+}
+.sb-chip:hover { background:rgba(167,139,250,0.18); transform:scale(1.12); border-color:var(--purple); }
+.sb-chip:active { transform:scale(0.9); }
+.sb-clr {
+  width:22px; height:22px; border-radius:50%; border:1px solid var(--border2);
+  background:transparent; color:var(--muted); font-size:0.46rem;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all 0.12s; line-height:1; flex-shrink:0;
+}
+.sb-clr:hover { border-color:var(--red); color:var(--red); }
+
+/* side bet result overlay on pill */
+.sb-result {
+  position:absolute; inset:0; border-radius:var(--r);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  background:rgba(4,8,13,0.88); pointer-events:none;
+  opacity:0; transition:opacity 0.25s;
+}
+.sb-result.show { opacity:1; }
+.sr-win  { font-family:'Orbitron',sans-serif; font-size:0.68rem; font-weight:900; color:var(--gold); text-shadow:var(--gold-glow); white-space:nowrap; }
+.sr-lose { font-family:'Orbitron',sans-serif; font-size:0.68rem; font-weight:900; color:var(--red); white-space:nowrap; }
+.sr-combo { font-size:0.46rem; color:var(--muted); text-align:center; padding:0 4px; white-space:nowrap; }
+
+/* ── INFO MODAL ── */
+.info-section { display:flex; flex-direction:column; gap:10px; }
+.info-sec-title {
+  font-family:'Orbitron',sans-serif; font-size:0.62rem; font-weight:700;
+  letter-spacing:2px; color:var(--text);
+  padding-bottom:7px; border-bottom:1px solid var(--border2);
+}
+.info-text { font-size:0.7rem; color:var(--muted); line-height:1.7; }
+.info-card-val {
+  background:var(--panel2); border:1px solid var(--border2); border-radius:8px;
+  padding:10px 8px; text-align:center;
+}
+.info-cv-label { font-family:'Orbitron',sans-serif; font-size:0.65rem; font-weight:700; color:var(--text); margin-bottom:4px; }
+.info-cv-val   { font-size:0.58rem; color:var(--muted); }
+.info-action { display:flex; align-items:center; gap:10px; }
+.info-action-tag {
+  font-family:'Orbitron',sans-serif; font-size:0.52rem; font-weight:900;
+  letter-spacing:1px; padding:4px 10px; border-radius:6px; border:1px solid;
+  white-space:nowrap; flex-shrink:0; min-width:64px; text-align:center;
+}
+.info-action-tag.kas    { color:var(--kas);    border-color:var(--kas);    background:rgba(73,234,203,0.08); }
+.info-action-tag.red    { color:var(--red);    border-color:var(--red);    background:rgba(240,83,101,0.08); }
+.info-action-tag.gold   { color:var(--gold);   border-color:var(--gold);   background:rgba(245,200,66,0.08); }
+.info-action-tag.purple { color:var(--purple); border-color:var(--purple); background:rgba(167,139,250,0.08); }
+.info-action-desc { font-size:0.68rem; color:var(--muted); line-height:1.5; }
+.info-payout-row {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:0.68rem; color:var(--muted);
+  padding:5px 0; border-bottom:1px solid var(--border2);
+}
+.info-payout-row:last-child { border-bottom:none; }
+.info-payout-val { font-family:'Orbitron',sans-serif; font-size:0.72rem; font-weight:700; }
+.info-payout-val.kas  { color:var(--kas); }
+.info-payout-val.gold { color:var(--gold); }
+.info-payout-val.red  { color:var(--red); }
+.info-sb-block {
+  background:var(--panel2); border:1px solid var(--border2); border-radius:10px;
+  padding:12px; display:flex; flex-direction:column; gap:6px;
+}
+.info-sb-name { font-family:'Orbitron',sans-serif; font-size:0.6rem; font-weight:900; letter-spacing:2px; }
+.info-sb-pay {
+  background:rgba(255,255,255,0.03); border:1px solid var(--border2); border-radius:6px;
+  padding:6px 4px; text-align:center; font-size:0.5rem; color:var(--muted); line-height:1.4;
+}
+.info-sb-mult { font-family:'Orbitron',sans-serif; font-size:0.62rem; font-weight:900; color:var(--purple); margin-top:2px; }
+
+/* toggle button */
+.sb-toggle {
+  display:flex; align-items:center; gap:6px;
+  background:transparent; border:1px solid var(--border2);
+  border-radius:var(--r); padding:5px 10px; cursor:pointer;
+  font-family:'Orbitron',sans-serif; font-size:0.54rem; letter-spacing:1.5px;
+  color:var(--muted); transition:all 0.18s; white-space:nowrap;
+}
+.sb-toggle:hover { border-color:var(--purple); color:var(--purple); }
+.sb-toggle.active { border-color:var(--purple); color:var(--purple); background:rgba(167,139,250,0.08); }
+.sb-dot { width:5px; height:5px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+/* ── ACTION BUTTONS ── */
+.action-btns {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:9px;
+}
+.abtn {
+  position:relative; padding:14px 8px;
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r);
+  font-family:'Orbitron',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:1.5px;
+  cursor:pointer; transition:all 0.14s;
+  display:flex; flex-direction:column; align-items:center; gap:4px; overflow:hidden;
+}
+.abtn .kh { font-size:0.46rem; color:var(--muted); font-family:'JetBrains Mono',monospace; font-weight:400; }
+.abtn::before { content:''; position:absolute; inset:0; background:currentColor; opacity:0; transition:opacity 0.14s; }
+.abtn:hover:not(:disabled)::before { opacity:0.07; }
+.abtn:active:not(:disabled) { transform:scale(0.97); }
+.abtn:disabled { opacity:0.22; cursor:not-allowed; }
+.abtn-hit    { color:var(--kas);    border-color:var(--kas); }
+.abtn-stand  { color:var(--red);    border-color:var(--red); }
+.abtn-double { color:var(--gold);   border-color:var(--gold); }
+.abtn-split  { color:var(--purple); border-color:var(--purple); }
+.abtn-hit:hover:not(:disabled)    { box-shadow:var(--kas-glow); }
+.abtn-stand:hover:not(:disabled)  { box-shadow:var(--red-glow); }
+.abtn-double:hover:not(:disabled) { box-shadow:var(--gold-glow); }
+.abtn-split:hover:not(:disabled)  { box-shadow:0 0 18px rgba(167,139,250,0.5); }
+
+/* ── BET AREA ── */
+.bet-area { display:flex; flex-direction:column; gap:10px; }
+
+.bet-top { display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; }
+
+.bet-box {
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r); padding:10px 14px;
+}
+.bet-lbl { font-size:0.52rem; color:var(--muted); letter-spacing:3px; margin-bottom:2px; }
+.bet-amt {
+  font-family:'Orbitron',sans-serif; font-size:1.2rem; font-weight:900;
+  color:var(--gold); text-shadow:var(--gold-glow);
+}
+.bet-sym { color:var(--gold); opacity:0.65; font-size:0.8rem; }
+
+.bet-qbtns { display:flex; gap:5px; flex-wrap:wrap; }
+.qbtn {
+  background:transparent; border:1px solid var(--border2); border-radius:5px;
+  color:var(--muted); font-size:0.6rem; padding:5px 9px; cursor:pointer;
+  transition:all 0.14s; font-family:'JetBrains Mono',monospace;
+}
+.qbtn:hover { border-color:var(--border); color:var(--text); }
+
+.deal-btn {
+  background:linear-gradient(135deg,rgba(73,234,203,0.22),rgba(73,234,203,0.08));
+  border:1px solid var(--kas); border-radius:var(--r);
+  color:var(--kas); font-family:'Orbitron',sans-serif; font-size:0.82rem; font-weight:900;
+  letter-spacing:2.5px; padding:12px 28px; cursor:pointer; transition:all 0.2s;
+  box-shadow:var(--kas-glow);
+}
+.deal-btn:hover { background:rgba(73,234,203,0.25); box-shadow:0 0 36px rgba(73,234,203,0.45); }
+.deal-btn:active { transform:scale(0.97); }
+
+.mob-clear-btn {
+  width:38px; height:38px; border-radius:50%;
+  border:1.5px solid var(--border); background:rgba(240,83,101,0.08);
+  color:var(--red); font-size:0.85rem; cursor:pointer;
+  align-items:center; justify-content:center;
+  transition:all 0.15s; flex-shrink:0;
+}
+.mob-clear-btn:hover { background:rgba(240,83,101,0.2); border-color:var(--red); }
+.mob-clear-btn:active { transform:scale(0.9); }
+
+/* chips */
+.chips-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.chip {
+  width:50px; height:50px; border-radius:50%;
+  border:3px solid; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; flex-shrink:0; transition:transform 0.14s, box-shadow 0.14s; position:relative;
+  font-family:'Orbitron',sans-serif; font-weight:900;
+}
+.chip:hover  { transform:translateY(-4px) scale(1.1); }
+.chip:active { transform:scale(0.93); }
+.chip::before { content:''; position:absolute; inset:4px; border-radius:50%; border:1px dashed currentColor; opacity:0.28; }
+.chip-v { font-size:0.65rem; line-height:1; }
+.chip-u { font-size:0.38rem; letter-spacing:1px; opacity:0.65; margin-top:1px; }
+.c1  { border-color:#9CA3AF; color:#9CA3AF; background:rgba(156,163,175,0.07); }
+.c5  { border-color:#F87171; color:#F87171; background:rgba(248,113,113,0.07); }
+.c10 { border-color:#60A5FA; color:#60A5FA; background:rgba(96,165,250,0.07); }
+.c25 { border-color:#34D399; color:#34D399; background:rgba(52,211,153,0.07); }
+.c50 { border-color:#C084FC; color:#C084FC; background:rgba(192,132,252,0.07); }
+.c100{ border-color:var(--gold);  color:var(--gold);  background:rgba(245,200,66,0.07); }
+
+/* kb hints */
+.kb-bar { display:flex; gap:12px; align-items:center; margin-left:auto; }
+.kbi    { font-size:0.54rem; color:var(--muted); display:flex; align-items:center; gap:4px; }
+.kbk    { background:var(--panel2); border:1px solid var(--border2); border-radius:3px; padding:1px 5px; font-size:0.52rem; color:var(--text); }
+
+/* split */
+.split-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.split-hand {
+  border:1px solid var(--border2); border-radius:var(--r); padding:10px;
+  background:rgba(73,234,203,0.03); transition:all 0.2s;
+}
+.split-hand.active { border-color:var(--kas); background:rgba(73,234,203,0.06); box-shadow:0 0 18px rgba(73,234,203,0.14); }
+.split-lbl { font-size:0.54rem; color:var(--muted); letter-spacing:3px; margin-bottom:6px; }
+
+/* ═══════════════════════════════════════════════
+   SIDEBAR (desktop only)
+═══════════════════════════════════════════════ */
+.sidebar {
+  background:var(--panel); border-left:1px solid var(--border);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.stabs { display:flex; border-bottom:1px solid var(--border); flex-shrink:0; }
+.stab {
+  flex:1; padding:12px 4px;
+  background:transparent; border:none; border-bottom:2px solid transparent; margin-bottom:-1px;
+  color:var(--muted); font-family:'Orbitron',sans-serif; font-size:0.52rem; letter-spacing:2px;
+  cursor:pointer; transition:all 0.2s;
+}
+.stab.a { color:var(--kas); border-bottom-color:var(--kas); }
+
+.sbody { flex:1; overflow-y:auto; padding:14px 12px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+.sbody::-webkit-scrollbar { width:3px; }
+.sbody::-webkit-scrollbar-thumb { background:var(--border); }
+
+.tpanel { display:none; }
+.tpanel.a { display:block; }
+
+/* stat grid */
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:10px; }
+.scard {
+  background:var(--panel2); border:1px solid var(--border2); border-radius:var(--r); padding:9px 10px;
+}
+.scard .sl { font-size:0.52rem; color:var(--muted); letter-spacing:2px; margin-bottom:3px; }
+.scard .sv { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:900; color:var(--kas); }
+.scard .sv.r  { color:var(--red); }
+.scard .sv.g  { color:var(--gold); }
+
+.pnlrow {
+  background:var(--panel2); border:1px solid var(--border2); border-radius:var(--r);
+  padding:10px 12px; display:flex; justify-content:space-between; align-items:center; margin-bottom:7px;
+}
+.pnlrow .pl { font-size:0.54rem; color:var(--muted); letter-spacing:2px; }
+.pnlrow .pv { font-family:'Orbitron',sans-serif; font-size:1.05rem; font-weight:900; }
+
+/* log */
+.log-entry {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:6px 0; border-bottom:1px solid var(--border2); font-size:0.68rem;
+}
+.le-res { font-family:'Orbitron',sans-serif; font-size:0.6rem; font-weight:700; }
+.le-res.win  { color:var(--kas); } .le-res.bj { color:var(--gold); }
+.le-res.lose { color:var(--red); } .le-res.push{ color:var(--gold); }
+.le-amt { color:var(--muted); }
+.le-amt.pos { color:var(--kas); } .le-amt.neg { color:var(--red); }
+
+/* leaderboard */
+.lb-tabs { display:flex; border:1px solid var(--border); border-radius:var(--r); overflow:hidden; margin-bottom:12px; }
+.lbtab {
+  flex:1; padding:8px 4px; background:transparent; border:none;
+  color:var(--muted); font-family:'Orbitron',sans-serif; font-size:0.52rem; letter-spacing:1px;
+  cursor:pointer; transition:all 0.2s;
+}
+.lbtab.a { background:var(--kas-dim); color:var(--kas); }
+
+.lb-entry {
+  display:grid; grid-template-columns:24px 1fr auto;
+  align-items:center; gap:7px; padding:7px 0; border-bottom:1px solid var(--border2);
+}
+.lb-rank { font-family:'Orbitron',sans-serif; font-size:0.6rem; color:var(--muted); }
+.lb-rank.g { color:var(--gold); }
+.lb-addr { font-size:0.62rem; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lb-pnl  { font-size:0.68rem; font-weight:600; color:var(--kas); white-space:nowrap; }
+.lb-pnl.neg { color:var(--red); }
+
+/* wallet panel */
+.waddrbox {
+  background:var(--panel2); border:1px solid var(--border2); border-radius:var(--r);
+  padding:10px 12px; font-size:0.62rem; color:var(--kas); word-break:break-all;
+  line-height:1.6; margin-bottom:9px;
+}
+.wmode {
+  display:inline-flex; align-items:center; gap:5px;
+  background:var(--kas-dim); border:1px solid var(--border); border-radius:100px;
+  padding:3px 10px; font-size:0.56rem; color:var(--kas); letter-spacing:2px; margin-bottom:10px;
+}
+
+/* ═══════════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════════ */
+.overlay {
+  position:fixed; inset:0; background:rgba(4,8,13,0.88);
+  backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center;
+  z-index:500; opacity:0; pointer-events:none; transition:opacity 0.25s;
+}
+.overlay.open { opacity:1; pointer-events:all; }
+
+.modal {
+  background:var(--panel); border:1px solid var(--border); border-radius:16px;
+  box-shadow:var(--kas-glow), 0 40px 80px rgba(0,0,0,0.6);
+  width:420px; max-width:92vw; overflow:hidden;
+  animation:modalIn 0.3s cubic-bezier(0.34,1.4,0.64,1) both;
+}
+@keyframes modalIn { from{transform:scale(0.82) translateY(18px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+
+.mhdr { padding:24px 26px 0; text-align:center; }
+.mhdr svg { width:44px; height:44px; margin-bottom:12px; }
+.mtitle {
+  font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.2rem;
+  color:var(--kas); letter-spacing:3px; text-shadow:var(--kas-glow); margin-bottom:5px;
+}
+.msub { font-size:0.7rem; color:var(--muted); line-height:1.7; }
+
+.mtabs {
+  display:flex; margin:18px 26px 0;
+  border:1px solid var(--border); border-radius:var(--r); overflow:hidden;
+}
+.mtab {
+  flex:1; padding:9px; background:transparent; border:none;
+  color:var(--muted); font-family:'Orbitron',sans-serif; font-size:0.58rem; letter-spacing:2px;
+  cursor:pointer; transition:all 0.2s;
+}
+.mtab.a { background:var(--kas-dim); color:var(--kas); }
+
+.mbody { padding:18px 26px 26px; }
+.msec { display:none; }
+.msec.a { display:block; }
+
+.minput-wrap {
+  background:var(--panel2); border:1px solid var(--border); border-radius:var(--r);
+  display:flex; align-items:center; gap:8px; padding:11px 14px; margin-bottom:10px;
+}
+.minput-wrap input {
+  flex:1; background:transparent; border:none; outline:none;
+  color:var(--kas); font-family:'JetBrains Mono',monospace; font-size:0.88rem;
+}
+.minput-wrap span { color:var(--muted); font-size:0.7rem; }
+
+.mbtn {
+  width:100%; padding:13px; border-radius:var(--r);
+  font-family:'Orbitron',sans-serif; font-size:0.78rem; font-weight:900; letter-spacing:2px;
+  cursor:pointer; transition:all 0.2s; margin-bottom:8px;
+}
+.mbtn-p { background:rgba(73,234,203,0.15); border:1px solid var(--kas); color:var(--kas); }
+.mbtn-p:hover { box-shadow:var(--kas-glow); background:rgba(73,234,203,0.25); }
+.mbtn-g { background:rgba(245,200,66,0.12); border:1px solid var(--gold); color:var(--gold); }
+.mbtn-g:hover { box-shadow:var(--gold-glow); }
+a.link { color:var(--kas); }
+
+/* insurance bar */
+#insBar {
+  display:none; background:rgba(245,200,66,0.07); border:1px solid rgba(245,200,66,0.28);
+  border-radius:var(--r); padding:10px 14px; align-items:center; justify-content:space-between;
+  gap:10px; margin-bottom:10px;
+}
+#insBar.show { display:flex; }
+.ins-lbl { font-size:0.68rem; color:var(--gold); }
+.ins-btns { display:flex; gap:6px; }
+.ins-btn { padding:6px 12px; border-radius:5px; font-family:'Orbitron',sans-serif; font-size:0.6rem; cursor:pointer; transition:all 0.14s; }
+.ins-y { background:rgba(245,200,66,0.12); border:1px solid var(--gold); color:var(--gold); }
+.ins-n { background:transparent; border:1px solid var(--border); color:var(--muted); }
+
+/* toast */
+#toast {
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(70px);
+  background:var(--panel2); border:1px solid var(--border); border-radius:100px;
+  padding:9px 20px; font-size:0.72rem; color:var(--kas);
+  z-index:600; transition:transform 0.3s cubic-bezier(0.34,1.4,0.64,1); white-space:nowrap;
+}
+#toast.show { transform:translateX(-50%) translateY(0); }
+#toast.err  { color:var(--red); border-color:var(--red); }
+
+/* particles */
+#cvs { position:fixed; inset:0; pointer-events:none; z-index:450; }
+
+/* ── IN-GAME BET BAR ── */
+#activeBetBar {
+  display:none; align-items:center; gap:8px; flex-wrap:wrap;
+  background:var(--panel2); border:1px solid var(--border2);
+  border-radius:var(--r); padding:8px 14px;
+  font-size:0.62rem; color:var(--muted);
+}
+#activeBetBar.show { display:flex; }
+.abb-item  { display:flex; align-items:center; gap:5px; }
+.abb-label { letter-spacing:2px; font-size:0.52rem; }
+.abb-val   { font-family:'Orbitron',sans-serif; font-weight:700; font-size:0.7rem; color:var(--gold); }
+.abb-sep   { color:var(--border); margin:0 6px; }
+.abb-hand  {
+  background:var(--kas-dim); border:1px solid var(--border); border-radius:4px;
+  padding:2px 8px; font-size:0.55rem; color:var(--kas); font-family:'Orbitron',sans-serif;
+}
+
+/* ── ADD FUNDS MODAL ── */
+#addFundsModal { z-index:600; }
+
+/* ── DOUBLE NO-FUNDS STATE ── */
+.abtn-double.low-funds { animation:warnPulse 1s infinite; }
+@keyframes warnPulse {
+  0%,100%{ border-color:var(--gold); box-shadow:none; }
+  50%    { border-color:var(--red);  box-shadow:var(--red-glow); }
+}
+
+/* ═══════════════════════════════════════════════
+   DISCLAIMER SCREEN
+═══════════════════════════════════════════════ */
+#disclaimerScreen {
+  position:fixed; inset:0; z-index:1000;
+  background: radial-gradient(ellipse at 50% 30%, rgba(73,234,203,0.07) 0%, transparent 65%), var(--bg);
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+#disclaimerScreen::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(73,234,203,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(73,234,203,0.025) 1px, transparent 1px);
+  background-size:48px 48px;
+}
+
+.disc-card {
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:20px; width:100%; max-width:480px;
+  box-shadow: var(--kas-glow), 0 40px 80px rgba(0,0,0,0.7);
+  overflow:hidden; position:relative; z-index:1;
+  animation: modalIn 0.4s cubic-bezier(0.34,1.4,0.64,1) both;
+}
+
+.disc-top {
+  background: linear-gradient(135deg, rgba(240,83,101,0.12), rgba(245,200,66,0.08));
+  border-bottom:1px solid rgba(240,83,101,0.2);
+  padding:28px 28px 22px; text-align:center;
+}
+.disc-warn-icon {
+  font-size:2.6rem; margin-bottom:10px; display:block;
+  animation: warnPulse 2s ease-in-out infinite;
+}
+@keyframes warnPulse {
+  0%,100%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.08);opacity:0.85}
+}
+.disc-title {
+  font-family:'Orbitron',sans-serif; font-weight:900; font-size:1rem;
+  color:var(--red); letter-spacing:3px; text-shadow:var(--red-glow); margin-bottom:6px;
+}
+.disc-subtitle {
+  font-size:0.65rem; color:var(--muted); letter-spacing:2px;
+}
+
+.disc-body { padding:22px 28px; }
+
+.disc-warning-box {
+  background:rgba(240,83,101,0.06); border:1px solid rgba(240,83,101,0.22);
+  border-radius:var(--r); padding:14px 16px; margin-bottom:16px;
+}
+.disc-warning-box p {
+  font-size:0.7rem; color:var(--text); line-height:1.85; opacity:0.85;
+}
+.disc-warning-box p + p { margin-top:8px; }
+.disc-warning-box b { color:var(--red); font-weight:600; }
+
+.disc-checks { margin-bottom:20px; display:flex; flex-direction:column; gap:10px; }
+.disc-check {
+  display:flex; align-items:flex-start; gap:12px; cursor:pointer;
+  background:var(--panel2); border:1px solid var(--border2); border-radius:var(--r);
+  padding:12px 14px; transition:all 0.2s;
+}
+.disc-check:hover { border-color:var(--border); }
+.disc-check.checked { border-color:rgba(73,234,203,0.4); background:rgba(73,234,203,0.04); }
+
+.disc-checkbox {
+  width:20px; height:20px; border-radius:5px; flex-shrink:0; margin-top:1px;
+  border:2px solid var(--border); background:transparent;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s; font-size:0.75rem;
+}
+.disc-check.checked .disc-checkbox {
+  background:var(--kas); border-color:var(--kas); color:var(--bg);
+  box-shadow:0 0 10px rgba(73,234,203,0.4);
+}
+.disc-check-text { font-size:0.68rem; color:var(--muted); line-height:1.6; }
+.disc-check.checked .disc-check-text { color:var(--text); }
+.disc-check-text b { color:var(--kas); font-weight:700; }
+
+.disc-enter-btn {
+  width:100%; padding:15px; border-radius:var(--r);
+  font-family:'Orbitron',sans-serif; font-size:0.82rem; font-weight:900; letter-spacing:2.5px;
+  cursor:pointer; transition:all 0.25s; border:1px solid var(--border);
+  background:rgba(73,234,203,0.05); color:var(--muted);
+  pointer-events:none;
+}
+.disc-enter-btn.ready {
+  background:linear-gradient(135deg,rgba(73,234,203,0.22),rgba(73,234,203,0.08));
+  border-color:var(--kas); color:var(--kas); box-shadow:var(--kas-glow);
+  pointer-events:all;
+}
+.disc-enter-btn.ready:hover {
+  background:rgba(73,234,203,0.28); box-shadow:0 0 36px rgba(73,234,203,0.5);
+}
+.disc-enter-btn.ready:active { transform:scale(0.98); }
+
+.disc-footer {
+  padding:12px 28px 18px; text-align:center;
+  font-size:0.54rem; color:var(--muted); line-height:1.7; opacity:0.6;
+}
+
+
+/* ═══════════════════════════════════════════════
+   MOBILE LAYOUT  (< 860px)
+═══════════════════════════════════════════════ */
+@media (max-width:859px) {
+  :root { --hh:52px; --nb:56px; }
+
+  /* header shrink */
+  .logo-name { font-size:0.88rem; letter-spacing:1px; }
+  .logo-tag  { display:none; }
+  .logo svg  { width:22px; height:22px; }
+  .hdr-center { display:none; }
+  .bal-pill  { padding:4px 10px; font-size:0.66rem; gap:4px; }
+  #walletBtn { padding:4px 10px; font-size:0.6rem; max-width:120px; gap:5px; }
+  .wdot      { width:5px; height:5px; }
+
+  /* game wrap — single column, with bottom nav */
+  .game-wrap {
+    grid-template-columns:1fr;
+    bottom:var(--nb);
+  }
+
+  /* hide desktop sidebar */
+  .sidebar { display:none; }
+
+  /* table scrollable on mobile so action area never clipped */
+  .table {
+    overflow-y:auto;
+    overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+  }
+  .action-bar {
+    flex:0 0 auto;          /* don't shrink — always full size */
+    justify-content:flex-start;
+  }
+
+  /* table zones — tighter padding */
+  .dealer-zone  { padding:14px 14px 10px; }
+  .player-zone  { padding:10px 14px 8px; }
+  .action-bar   { padding:0 14px 10px; gap:9px; }
+  .divider      { margin:0 14px; }
+
+  /* smaller cards */
+  .card { width:66px; height:94px; }
+  .card-r { font-size:0.72rem; }
+  .card-s { font-size:0.72rem; }
+  .card-center { font-size:1.6rem; }
+  .cards-row { min-height:96px; gap:7px; }
+
+  /* sbadge smaller */
+  .sbadge { font-size:1.1rem; padding:4px 12px; margin-bottom:8px; }
+
+  /* action buttons 2x2 on mobile */
+  .action-btns { grid-template-columns:repeat(2,1fr); gap:8px; }
+  .abtn { padding:16px 8px; font-size:0.75rem; }
+  .abtn .kh { display:none; }
+
+  /* bet area */
+  .bet-top { grid-template-columns:1fr auto; }
+  .bet-qbtns { display:none; } /* hide on mobile – space precious */
+  #mobClearBtn { display:flex !important; }
+  .deal-btn  { padding:12px 20px; font-size:0.75rem; letter-spacing:2px; }
+  .bet-amt   { font-size:1rem; }
+
+  /* chips — bigger tap area */
+  .chip { width:48px; height:48px; }
+  .chip-v { font-size:0.62rem; }
+  .kb-bar { display:none; }
+
+  /* result panel vertical on mobile */
+  #resultPanel { flex-direction:column; align-items:stretch; gap:10px; padding:12px; }
+  .rp-icon { font-size:1.6rem; }
+  .rp-title { font-size:1rem; }
+  .rp-btns { flex-direction:row; }
+  .rp-btn  { flex:1; text-align:center; padding:10px 8px; font-size:0.58rem; }
+
+  /* zone label */
+  .zlabel { font-size:0.5rem; margin-bottom:6px; }
+
+  /* ── MOBILE BOTTOM NAV ── */
+  .mobile-nav {
+    display:flex;
+    position:fixed; bottom:0; left:0; right:0; height:var(--nb);
+    background:rgba(4,8,13,0.97); border-top:1px solid var(--border);
+    z-index:300;
+  }
+  .mnav-btn {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; background:transparent; border:none; color:var(--muted);
+    font-family:'Orbitron',sans-serif; font-size:0.46rem; letter-spacing:1.5px; cursor:pointer;
+    transition:all 0.2s; border-top:2px solid transparent;
+  }
+  .mnav-btn svg { width:18px; height:18px; }
+  .mnav-btn.a { color:var(--kas); border-top-color:var(--kas); }
+
+  /* ── MOBILE SHEETS (slide-up panels) ── */
+  .msheet-overlay {
+    display:flex; position:fixed; inset:0;
+    background:rgba(4,8,13,0.75); z-index:400;
+    align-items:flex-end;
+    opacity:0; pointer-events:none; transition:opacity 0.25s;
+  }
+  .msheet-overlay.open { opacity:1; pointer-events:all; }
+  .msheet {
+    width:100%; max-height:72vh;
+    background:var(--panel); border-top:1px solid var(--border);
+    border-radius:16px 16px 0 0;
+    overflow:hidden; display:flex; flex-direction:column;
+    transform:translateY(100%); transition:transform 0.32s cubic-bezier(0.32,1,0.6,1);
+  }
+  .msheet-overlay.open .msheet { transform:translateY(0); }
+  .msheet-handle {
+    width:36px; height:4px; border-radius:2px; background:var(--border);
+    margin:10px auto 0; flex-shrink:0;
+  }
+  .msheet-title {
+    font-family:'Orbitron',sans-serif; font-size:0.65rem; letter-spacing:3px;
+    color:var(--kas); padding:12px 16px 10px; border-bottom:1px solid var(--border2); flex-shrink:0;
+  }
+  .msheet-body { flex:1; overflow-y:auto; padding:12px 16px 20px; }
+}
+
+@media (min-width:860px) {
+  .mobile-nav      { display:none; }
+  .msheet-overlay  { display:none !important; }
+}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<canvas id="cvs"></canvas>
+
+<!-- ═══════════ DISCLAIMER SCREEN ═══════════ -->
+<div id="disclaimerScreen">
+  <div class="disc-card">
+    <div class="disc-top">
+      <span class="disc-warn-icon">⚠️</span>
+      <div class="disc-title">BEFORE YOU PLAY</div>
+    </div>
+    <div class="disc-body">
+      <div class="disc-warning-box">
+        <p><b>Gambling can be addictive</b> and involves real financial risk. Play responsibly.</p>
+      </div>
+      <div class="disc-checks" id="discChecks">
+        <div class="disc-check" id="chk1" onclick="toggleCheck('chk1')">
+          <div class="disc-checkbox" id="chk1box"></div>
+          <div class="disc-check-text">I am <b>21 years or older</b> and gambling is legal in my jurisdiction.</div>
+        </div>
+        <div class="disc-check" id="chk2" onclick="toggleCheck('chk2')">
+          <div class="disc-checkbox" id="chk2box"></div>
+          <div class="disc-check-text">I understand I may <b>lose funds</b> and agree to the Terms of Service.</div>
+        </div>
+      </div>
+      <button class="disc-enter-btn" id="discEnterBtn" onclick="enterSite()">ENTER →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ WALLET MODAL ═══════════ -->
+<div class="overlay" id="walletModal">
+  <div class="modal">
+    <div class="mhdr">
+      <svg viewBox="0 0 44 44" fill="none">
+        <polygon points="22,2 41,12 41,32 22,42 3,32 3,12" fill="none" stroke="#49EACB" stroke-width="1.5"/>
+        <polygon points="22,9 35,16 35,28 22,36 9,28 9,16" fill="rgba(73,234,203,0.1)" stroke="#49EACB" stroke-width="0.8"/>
+        <text x="22" y="27" text-anchor="middle" fill="#49EACB" font-size="12" font-family="Orbitron" font-weight="900">K</text>
+      </svg>
+      <div class="mtitle">KAS · 21</div>
+      <div class="msub">Blackjack on the Kaspa network</div>
+    </div>
+    <div class="mtabs">
+      <button class="mtab" id="mtab-kw"   onclick="switchMTab('kw')">⬡ KASWARE</button>
+      <button class="mtab" id="mtab-kt"   onclick="switchMTab('kt')">🏰 KASTLE</button>
+      <button class="mtab a" id="mtab-dm" onclick="switchMTab('dm')">▷ DEMO</button>
+    </div>
+    <div class="mbody">
+      <div class="msec" id="msec-kw">
+        <p class="msub" style="margin-bottom:6px">Connect your KasWare wallet to play with real KAS.</p>
+        <p class="msub" style="margin-bottom:14px;font-size:0.58rem;color:var(--muted)">⚠ Desktop/extension only — not supported on mobile browsers.<br>
+          <a class="link" href="https://kasware.xyz" target="_blank">→ Get KasWare</a></p>
+        <button class="mbtn mbtn-p" onclick="connectKW()">CONNECT KASWARE</button>
+      </div>
+      <div class="msec" id="msec-kt">
+        <p class="msub" style="margin-bottom:6px">Connect your Kastle wallet to play with real KAS.</p>
+        <p class="msub" style="margin-bottom:14px;font-size:0.58rem;color:var(--muted)">✅ Works on mobile & desktop.<br>
+          <a class="link" href="https://kastle.cc" target="_blank">→ Get Kastle</a></p>
+        <button class="mbtn mbtn-p" onclick="connectKastle()">CONNECT KASTLE</button>
+      </div>
+      <div class="msec a" id="msec-dm">
+        <p class="msub" style="margin-bottom:14px">Practice with simulated KAS — no real funds.</p>
+        <div class="minput-wrap">
+          <span style="font-size:0.75rem;color:var(--muted)">KAS</span>
+          <input type="number" id="demoAmt" value="10000" min="500" max="9999999">
+          <span>KAS</span>
+        </div>
+        <button class="mbtn mbtn-g" onclick="connectDemo()">START DEMO</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NICKNAME MODAL -->
+<div class="nick-modal-wrap" id="nickModalWrap" style="display:none" onclick="if(event.target===this)closeNickModal()">
+  <div class="nick-modal">
+    <h3>✏️ SET NICKNAME</h3>
+    <p>Choose a name to display on the leaderboard instead of your wallet address.</p>
+    <input class="nick-input" id="nickInput" type="text" maxlength="18" placeholder="e.g. KaspaKing, Hodler…" autocomplete="off" spellcheck="false">
+    <div class="nick-btns">
+      <button class="nick-save" onclick="saveNick()">SAVE NICKNAME</button>
+      <button class="nick-cancel" onclick="closeNickModal()">CANCEL</button>
+    </div>
+  </div>
+</div>
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 26 26" fill="none">
+      <polygon points="13,1 24,7 24,19 13,25 2,19 2,7" fill="none" stroke="#49EACB" stroke-width="1.5"/>
+      <text x="13" y="18" text-anchor="middle" fill="#49EACB" font-size="9" font-family="Orbitron" font-weight="900">K</text>
+    </svg>
+    <div class="logo-name">KAS·21</div>
+  </div>
+  <div class="hdr-center">
+    <div class="tick">NETWORK <b>MAINNET</b></div>
+    <div class="tick">HANDS TODAY <b id="tickH">0</b></div>
+  </div>
+  <div class="hdr-right">
+    <div class="bal-pill">
+      <span id="balDisplay">0</span>
+      <span class="bal-unit">KAS</span>
+    </div>
+    <button id="walletBtn" onclick="openModal()">
+      <div class="wdot" id="wdot"></div>
+      <span id="wlbl">CONNECT</span>
+    </button>
+  </div>
+</header>
+
+<!-- ═══════════ GAME WRAP ═══════════ -->
+<div class="game-wrap">
+
+  <!-- TABLE -->
+  <div class="table">
+
+    <!-- DEALER -->
+    <div class="dealer-zone">
+      <div class="zlabel">DEALER</div>
+      <div class="sbadge" id="dealerBadge"><span id="dealerScore">—</span><span class="soft" id="dealerSoft"></span></div>
+      <div class="cards-row" id="dealerCards"></div>
+    </div>
+
+    <div class="divider"></div>
+
+
+    <!-- PLAYER -->
+    <div class="player-zone">
+      <div id="insBar">
+        <span class="ins-lbl">⚡ Dealer shows Ace — Insurance?</span>
+        <div class="ins-btns">
+          <button class="ins-btn ins-y" onclick="takeIns()">YES</button>
+          <button class="ins-btn ins-n" onclick="noIns()">NO</button>
+        </div>
+      </div>
+      <div class="zlabel" id="pzLabel">PLAYER</div>
+      <div id="playerArea"></div>
+    </div>
+
+    <!-- ACTION BAR -->
+    <div class="action-bar">
+
+      <!-- RESULT PANEL -->
+      <div id="resultPanel">
+        <div class="rp-icon" id="rIcon">🃏</div>
+        <div class="rp-texts">
+          <div class="rp-title" id="rTitle">WIN</div>
+          <div class="rp-amt"   id="rAmt"></div>
+          <div class="rp-sub"   id="rSub"></div>
+        </div>
+        <div class="rp-btns">
+          <button class="rp-btn rp-share" onclick="shareToX()" title="Share on X">𝕏 SHARE</button>
+          <button class="rp-btn rp-repeat" onclick="repeatAndDeal()">↺ REPEAT</button>
+          <button class="rp-btn rp-next"   onclick="nextRound()">NEXT →</button>
+        </div>
+      </div>
+
+      <!-- ACTIVE BET BAR (shown during play) -->
+      <div id="activeBetBar">
+        <div class="abb-item"><span class="abb-label">TOTAL AT STAKE</span><span class="abb-val" id="abbTotal">—</span></div>
+        <span class="abb-sep">|</span>
+        <div class="abb-item"><span class="abb-label">ACTIVE HAND</span><span class="abb-hand" id="abbHand">HAND 1</span></div>
+        <span class="abb-sep">|</span>
+        <div class="abb-item"><span class="abb-label">HAND BET</span><span class="abb-val" id="abbHandBet">—</span></div>
+      </div>
+
+      <div class="phase-hint" id="phaseHint">Place your bet and press DEAL</div>
+
+      <!-- PLAY BUTTONS -->
+      <div class="action-btns" id="actionBtns" style="display:none">
+        <button class="abtn abtn-hit"    id="bHit"    onclick="hit()">HIT<span class="kh">[ H ]</span></button>
+        <button class="abtn abtn-stand"  id="bStand"  onclick="stand()">STAND<span class="kh">[ S ]</span></button>
+        <button class="abtn abtn-double" id="bDouble" onclick="dbl()">DOUBLE<span class="kh">[ D ]</span></button>
+        <button class="abtn abtn-split"  id="bSplit"  onclick="spl()">SPLIT<span class="kh">[ P ]</span></button>
+      </div>
+
+      <!-- SIDE BETS ROW (inline, always visible) -->
+      <div class="sb-row" id="sbRow" style="display:none">
+        <div class="sb-row-label">SIDE BETS</div>
+
+        <div class="sb-pill" id="sb-bi">
+          <div class="sb-pill-top">
+            <span class="sb-pill-name">BUST IT</span>
+            <span class="sb-pill-odds">x2–x250</span>
+          </div>
+          <div class="sb-pill-amt" id="sbAmt-bi">KAS 0</div>
+          <div class="sb-pill-chips">
+            <div class="sb-chip" onclick="addSb(event,'bi',5)">5</div>
+            <div class="sb-chip" onclick="addSb(event,'bi',25)">25</div>
+            <button class="sb-clr" onclick="clearSb(event,'bi')">✕</button>
+          </div>
+          <div class="sb-result" id="sbRes-bi">
+            <span class="sr-win" id="sbResLbl-bi"></span>
+            <span class="sr-combo" id="sbResCom-bi"></span>
+          </div>
+        </div>
+
+        <div class="sb-pill" id="sb-pp">
+          <div class="sb-pill-top">
+            <span class="sb-pill-name">PAIRS</span>
+            <span class="sb-pill-odds">x6–x30</span>
+          </div>
+          <div class="sb-pill-amt" id="sbAmt-pp">KAS 0</div>
+          <div class="sb-pill-chips">
+            <div class="sb-chip" onclick="addSb(event,'pp',5)">5</div>
+            <div class="sb-chip" onclick="addSb(event,'pp',25)">25</div>
+            <button class="sb-clr" onclick="clearSb(event,'pp')">✕</button>
+          </div>
+          <div class="sb-result" id="sbRes-pp">
+            <span class="sr-win" id="sbResLbl-pp"></span>
+            <span class="sr-combo" id="sbResCom-pp"></span>
+          </div>
+        </div>
+
+        <div class="sb-pill" id="sb-21">
+          <div class="sb-pill-top">
+            <span class="sb-pill-name">21+3</span>
+            <span class="sb-pill-odds">x5–x100</span>
+          </div>
+          <div class="sb-pill-amt" id="sbAmt-21">KAS 0</div>
+          <div class="sb-pill-chips">
+            <div class="sb-chip" onclick="addSb(event,'21',5)">5</div>
+            <div class="sb-chip" onclick="addSb(event,'21',25)">25</div>
+            <button class="sb-clr" onclick="clearSb(event,'21')">✕</button>
+          </div>
+          <div class="sb-result" id="sbRes-21">
+            <span class="sr-win" id="sbResLbl-21"></span>
+            <span class="sr-combo" id="sbResCom-21"></span>
+          </div>
+        </div>
+
+        <div class="sb-pill" id="sb-ll">
+          <div class="sb-pill-top">
+            <span class="sb-pill-name">TRIPS</span>
+            <span class="sb-pill-odds">x5–x100</span>
+          </div>
+          <div class="sb-pill-amt" id="sbAmt-ll">KAS 0</div>
+          <div class="sb-pill-chips">
+            <div class="sb-chip" onclick="addSb(event,'ll',5)">5</div>
+            <div class="sb-chip" onclick="addSb(event,'ll',25)">25</div>
+            <button class="sb-clr" onclick="clearSb(event,'ll')">✕</button>
+          </div>
+          <div class="sb-result" id="sbRes-ll">
+            <span class="sr-win" id="sbResLbl-ll"></span>
+            <span class="sr-combo" id="sbResCom-ll"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BET AREA -->
+      <div class="bet-area" id="betArea">
+        <div class="bet-top">
+          <div class="bet-box">
+            <div class="bet-lbl">TOTAL STAKE <span style="color:var(--muted);font-size:0.5rem">/ MAX <span style="color:var(--gold);font-family:Orbitron,sans-serif;font-weight:700">100 KAS</span></span></div>
+            <div class="bet-amt"><span id="betAmt">0</span> <span class="bet-sym" style="font-size:0.6rem">KAS</span> <span id="betTotalNote" style="font-size:0.52rem;color:var(--muted);font-family:monospace"></span></div>
+          </div>
+          <div class="bet-qbtns">
+            <button class="qbtn" onclick="clearBet()">✕ CLEAR</button>
+            <button class="qbtn" onclick="repeatBet()">↺ REPEAT</button>
+            <button class="qbtn" onclick="halfBet()">½</button>
+            <button class="qbtn" onclick="maxBet()" style="position:relative">MAX <span style="font-size:0.5rem;opacity:0.7">100</span></button>
+          </div>
+          <!-- Mobile-only clear button -->
+          <button class="mob-clear-btn" id="mobClearBtn" onclick="clearBet()" style="display:none">✕</button>
+          <button class="deal-btn" onclick="deal()">DEAL</button>
+        </div>
+        <div class="chips-row">
+          <div class="chip c1"   onclick="addBet(1)">  <span class="chip-v">1</span>  <span class="chip-u">KAS</span></div>
+          <div class="chip c5"   onclick="addBet(5)">  <span class="chip-v">5</span>  <span class="chip-u">KAS</span></div>
+          <div class="chip c10"  onclick="addBet(10)"> <span class="chip-v">10</span> <span class="chip-u">KAS</span></div>
+          <div class="chip c25"  onclick="addBet(25)"> <span class="chip-v">25</span> <span class="chip-u">KAS</span></div>
+          <div class="chip c50"  onclick="addBet(50)"> <span class="chip-v">50</span> <span class="chip-u">KAS</span></div>
+          <div class="chip c100" onclick="addBet(100)"><span class="chip-v">100</span><span class="chip-u">KAS</span></div>
+          <div class="kb-bar">
+            <div class="kbi"><span class="kbk">H</span>Hit</div>
+            <div class="kbi"><span class="kbk">S</span>Stand</div>
+            <div class="kbi"><span class="kbk">D</span>Dbl</div>
+            <div class="kbi"><span class="kbk">Space</span>Deal</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /table -->
+
+  <!-- DESKTOP SIDEBAR -->
+  <div class="sidebar">
+    <div class="stabs">
+      <button class="stab a" onclick="setSTab(0,this)">STATS</button>
+      <button class="stab"   onclick="setSTab(1,this)">LOG</button>
+      <button class="stab"   onclick="setSTab(2,this)">BOARD</button>
+      <button class="stab"   onclick="setSTab(3,this)">WALLET</button>
+    </div>
+    <div class="sbody">
+      <div class="tpanel a" id="dsk-s0"><div id="statsContent"></div></div>
+      <div class="tpanel"   id="dsk-s1"><div id="logContent"></div></div>
+      <div class="tpanel"   id="dsk-s2"><div id="boardContent"></div></div>
+      <div class="tpanel"   id="dsk-s3"><div id="walletContent"></div></div>
+    </div>
+  </div>
+
+</div><!-- /game-wrap -->
+
+<!-- ═══════════ MOBILE BOTTOM NAV ═══════════ -->
+<nav class="mobile-nav" id="mobileNav">
+  <button class="mnav-btn a" id="mnav0" onclick="openMSheet('stats')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3h4v18H3zm7-4h4v22h-4zm7 8h4v14h-4z" stroke-linecap="round"/></svg>
+    STATS
+  </button>
+  <button class="mnav-btn" id="mnav1" onclick="openMSheet('log')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    LOG
+  </button>
+  <button class="mnav-btn" id="mnav2" onclick="openMSheet('board')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    BOARD
+  </button>
+  <button class="mnav-btn" id="mnav3" onclick="openMSheet('wallet')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 13a1 1 0 110 2 1 1 0 010-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    WALLET
+  </button>
+  <button class="mnav-btn" id="mnav4" onclick="openInfoModal()">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    INFO
+  </button>
+</nav>
+
+<!-- ═══════════ MOBILE SHEETS ═══════════ -->
+<div class="msheet-overlay" id="msheetOverlay" onclick="closeMSheet(event)">
+  <div class="msheet" id="msheet">
+    <div class="msheet-handle"></div>
+    <div class="msheet-title" id="msheetTitle">STATS</div>
+    <div class="msheet-body" id="msheetBody"></div>
+  </div>
+</div>
+
+<!-- ═══════════ INFO MODAL ═══════════ -->
+<div class="overlay" id="infoModal" onclick="if(event.target===this)closeInfoModal()">
+  <div class="modal" style="max-width:420px;max-height:88vh;overflow-y:auto;padding:0">
+
+    <!-- Header -->
+    <div style="padding:22px 22px 0;position:sticky;top:0;background:var(--card);z-index:1;border-radius:14px 14px 0 0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div style="font-family:Orbitron,sans-serif;font-size:0.9rem;font-weight:900;color:var(--kas);letter-spacing:2px">HOW TO PLAY</div>
+          <div style="font-size:0.6rem;color:var(--muted);letter-spacing:2px;margin-top:3px">KAS · 21 GUIDE</div>
+        </div>
+        <button onclick="closeInfoModal()" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>
+      <div style="height:1px;background:linear-gradient(90deg,transparent,var(--kas),transparent);margin:0 -22px"></div>
+    </div>
+
+    <div style="padding:18px 22px 24px;display:flex;flex-direction:column;gap:20px">
+
+      <!-- GOAL -->
+      <div class="info-section">
+        <div class="info-sec-title">🎯 THE GOAL</div>
+        <div class="info-text">Get as close to 21 as possible without going over. If the dealer busts (over 21) — you win. Beat the dealer's total to win.</div>
+      </div>
+
+      <!-- CARD VALUES -->
+      <div class="info-section">
+        <div class="info-sec-title">🃏 CARD VALUES</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div class="info-card-val"><div class="info-cv-label">2–10</div><div class="info-cv-val">Face value</div></div>
+          <div class="info-card-val"><div class="info-cv-label">J / Q / K</div><div class="info-cv-val">= 10</div></div>
+          <div class="info-card-val"><div class="info-cv-label">A</div><div class="info-cv-val">1 or 11</div></div>
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="info-section">
+        <div class="info-sec-title">🕹️ ACTIONS</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div class="info-action"><span class="info-action-tag kas">HIT</span><span class="info-action-desc">Draw another card</span></div>
+          <div class="info-action"><span class="info-action-tag red">STAND</span><span class="info-action-desc">Stop — dealer's turn</span></div>
+          <div class="info-action"><span class="info-action-tag gold">DOUBLE</span><span class="info-action-desc">Double your bet, receive exactly one more card</span></div>
+          <div class="info-action"><span class="info-action-tag purple">SPLIT</span><span class="info-action-desc">Split a pair into two separate hands</span></div>
+        </div>
+      </div>
+
+      <!-- PAYOUTS -->
+      <div class="info-section">
+        <div class="info-sec-title">💰 PAYOUTS</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="info-payout-row"><span>Regular win</span><span class="info-payout-val kas">1 : 1</span></div>
+          <div class="info-payout-row"><span>Blackjack (A + 10)</span><span class="info-payout-val gold">3 : 2</span></div>
+          <div class="info-payout-row"><span>Push (Tie)</span><span class="info-payout-val" style="color:var(--muted)">Return bet</span></div>
+          <div class="info-payout-row"><span>Insurance</span><span class="info-payout-val kas">2 : 1</span></div>
+        </div>
+      </div>
+
+      <!-- HOUSE RULES -->
+      <div class="info-section">
+        <div class="info-sec-title">📋 HOUSE RULES</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="info-payout-row"><span>Dealer hits on Soft 17</span><span class="info-payout-val" style="color:var(--muted)">✓</span></div>
+          <div class="info-payout-row"><span>Double — any 2 cards</span><span class="info-payout-val kas">✓</span></div>
+          <div class="info-payout-row"><span>Double after Split</span><span class="info-payout-val kas">✓</span></div>
+          <div class="info-payout-row"><span>Re-Split (max 4 hands)</span><span class="info-payout-val kas">✓</span></div>
+          <div class="info-payout-row"><span>Decks</span><span class="info-payout-val" style="color:var(--muted)">6</span></div>
+        </div>
+      </div>
+
+      <!-- SIDE BETS -->
+      <div class="info-section">
+        <div class="info-sec-title">🎰 SIDE BETS</div>
+
+        <div class="info-sb-block">
+          <div class="info-sb-name" style="color:var(--red)">BUST IT</div>
+          <div class="info-text" style="margin-bottom:8px">Bet that the dealer will bust. The more cards the dealer draws — the higher the payout.</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
+            <div class="info-sb-pay"><div>3 cards</div><div class="info-sb-mult">x2</div></div>
+            <div class="info-sb-pay"><div>4 cards</div><div class="info-sb-mult">x3</div></div>
+            <div class="info-sb-pay"><div>5 cards</div><div class="info-sb-mult">x10</div></div>
+            <div class="info-sb-pay"><div>6 cards</div><div class="info-sb-mult">x50</div></div>
+            <div class="info-sb-pay"><div>7+</div><div class="info-sb-mult" style="color:var(--gold)">x250</div></div>
+          </div>
+        </div>
+
+        <div class="info-sb-block">
+          <div class="info-sb-name" style="color:var(--purple)">PERFECT PAIRS</div>
+          <div class="info-text" style="margin-bottom:8px">Your first two cards form a pair.</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+            <div class="info-sb-pay"><div>Mixed Pair</div><div class="info-sb-mult">x6</div></div>
+            <div class="info-sb-pay"><div>Colored</div><div class="info-sb-mult">x12</div></div>
+            <div class="info-sb-pay"><div>Suited</div><div class="info-sb-mult" style="color:var(--gold)">x30</div></div>
+          </div>
+        </div>
+
+        <div class="info-sb-block">
+          <div class="info-sb-name" style="color:var(--purple)">21 + 3</div>
+          <div class="info-text" style="margin-bottom:8px">Your 2 cards + the dealer's up card — a poker combination.</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+            <div class="info-sb-pay"><div>Flush</div><div class="info-sb-mult">x5</div></div>
+            <div class="info-sb-pay"><div>Straight</div><div class="info-sb-mult">x10</div></div>
+            <div class="info-sb-pay"><div>3 of a Kind</div><div class="info-sb-mult">x30</div></div>
+            <div class="info-sb-pay"><div>Str. Flush</div><div class="info-sb-mult">x40</div></div>
+            <div class="info-sb-pay" style="grid-column:span 2"><div>Suited Trips</div><div class="info-sb-mult" style="color:var(--gold)">x100</div></div>
+          </div>
+        </div>
+
+        <div class="info-sb-block">
+          <div class="info-sb-name" style="color:var(--purple)">TRIPS</div>
+          <div class="info-text" style="margin-bottom:8px">Your first 3 cards are three of a kind. The better the match — the bigger the payout.</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+            <div class="info-sb-pay"><div>Mixed Trips</div><div class="info-sb-mult">x5</div></div>
+            <div class="info-sb-pay"><div>Colored Trips</div><div class="info-sb-mult">x30</div></div>
+            <div class="info-sb-pay"><div>Suited Trips</div><div class="info-sb-mult" style="color:var(--gold)">x100</div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BLACKJACK EXPLAINED -->
+      <div class="info-section">
+        <div class="info-sec-title">⚡ BLACKJACK</div>
+        <div class="info-text">Ace + any 10-value card (10, J, Q, K) = Blackjack. Pays <span style="color:var(--gold);font-weight:700">3:2</span>. If the dealer has BJ — the round ends immediately.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ADD FUNDS MODAL ═══════════ -->
+<div class="overlay" id="addFundsModal">
+  <div class="modal" style="max-width:340px">
+    <div class="mhdr">
+      <div class="mtitle" style="font-size:1rem">⚠ INSUFFICIENT FUNDS</div>
+      <div class="msub" style="margin-top:6px">You don't have enough KAS to double down on this hand.</div>
+    </div>
+    <div class="mbody">
+      <div style="background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.62rem;">
+          <span style="color:var(--muted)">HAND BET</span><span style="color:var(--gold);font-family:Orbitron,sans-serif;font-weight:700" id="afHandBet">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.62rem;">
+          <span style="color:var(--muted)">NEEDED TO DOUBLE</span><span style="color:var(--red);font-family:Orbitron,sans-serif;font-weight:700" id="afNeeded">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.62rem;">
+          <span style="color:var(--muted)">YOUR BALANCE</span><span style="color:var(--kas);font-family:Orbitron,sans-serif;font-weight:700" id="afBal">—</span>
+        </div>
+      </div>
+      <div id="afDemoSection" style="display:none">
+        <p style="font-size:0.68rem;color:var(--muted);margin-bottom:10px">Add demo funds to continue:</p>
+        <div class="minput-wrap">
+          <span>KAS</span>
+          <input type="number" id="afAddAmt" value="5000" min="100" max="999999">
+          <span>KAS</span>
+        </div>
+        <button class="mbtn mbtn-g" onclick="addFundsAndDouble()">ADD FUNDS &amp; DOUBLE</button>
+      </div>
+      <div id="afRealSection" style="display:none">
+        <p style="font-size:0.68rem;color:var(--muted);margin-bottom:12px">Top up your KasWare wallet, then retry.</p>
+        <button class="mbtn mbtn-p" onclick="retryDouble()">RETRY DOUBLE</button>
+      </div>
+      <button class="mbtn" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-bottom:0" onclick="closeAddFunds()">CANCEL — BACK TO HAND</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  AUDIO
+// ═══════════════════════════════════════════════
+let actx;
+const ac=()=>actx||(actx=new(window.AudioContext||window.webkitAudioContext)());
+function tone(f,t,d,v=0.26){
+  try{const c=ac(),o=c.createOscillator(),g=c.createGain();
+  o.connect(g);g.connect(c.destination);o.type=t;o.frequency.value=f;
+  g.gain.setValueAtTime(v,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+d);
+  o.start();o.stop(c.currentTime+d);}catch(e){}
+}
+const sfx={
+  deal: ()=>{tone(900,'sine',0.07,0.17);setTimeout(()=>tone(1100,'sine',0.05,0.11),55);},
+  chip: ()=>tone(1300,'sine',0.04,0.13),
+  win:  ()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.27,0.2),i*72)),
+  bj:   ()=>[523,659,784,1047,1319,1568].forEach((f,i)=>setTimeout(()=>tone(f,'triangle',0.35,0.24),i*62)),
+  lose: ()=>[380,300,240].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.17,0.17),i*92)),
+  bust: ()=>tone(180,'sawtooth',0.26,0.3),
+  push: ()=>tone(620,'sine',0.16,0.26),
+  clk:  ()=>tone(950,'sine',0.03,0.04),
+};
+
+// ═══════════════════════════════════════════════
+//  PARTICLES
+// ═══════════════════════════════════════════════
+const cvs=document.getElementById('cvs'),pc=cvs.getContext('2d');
+let pts=[];
+const resize=()=>{cvs.width=innerWidth;cvs.height=innerHeight;};
+resize();addEventListener('resize',resize);
+function burst(x,y,col,n=50){
+  for(let i=0;i<n;i++)pts.push({x,y,vx:(Math.random()-.5)*9,vy:(Math.random()-2.3)*7,
+    life:1,dec:0.013+Math.random()*0.02,sz:2.5+Math.random()*5,col});
+}
+(function loop(){
+  pc.clearRect(0,0,cvs.width,cvs.height);
+  pts=pts.filter(p=>p.life>0);
+  pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.13;p.life-=p.dec;
+    pc.globalAlpha=p.life;pc.fillStyle=p.col;
+    pc.beginPath();pc.arc(p.x,p.y,p.sz/2,0,Math.PI*2);pc.fill();});
+  pc.globalAlpha=1;requestAnimationFrame(loop);
+})();
+function celebrate(c1,c2='#FFD166'){
+  const cx=innerWidth/2,cy=innerHeight*.42;
+  burst(cx,cy,c1,55);burst(cx-180,cy+40,c2,28);burst(cx+180,cy+40,c1,28);
+}
+
+// ═══════════════════════════════════════════════
+//  DISCLAIMER
+// ═══════════════════════════════════════════════
+const discChecked = {chk1:false, chk2:false};
+
+function toggleCheck(id){
+  discChecked[id] = !discChecked[id];
+  const el = document.getElementById(id);
+  const box = document.getElementById(id+'box');
+  el.classList.toggle('checked', discChecked[id]);
+  box.textContent = discChecked[id] ? '✓' : '';
+  const allChecked = Object.values(discChecked).every(v=>v);
+  document.getElementById('discEnterBtn').classList.toggle('ready', allChecked);
+}
+
+function enterSite(){
+  const screen = document.getElementById('disclaimerScreen');
+  screen.style.transition = 'opacity 0.5s, transform 0.5s';
+  screen.style.opacity = '0';
+  screen.style.transform = 'scale(0.96)';
+  setTimeout(()=>{ screen.style.display='none'; openModal(); }, 480);
+}
+
+// ═══════════════════════════════════════════════
+//  SIDE BETS
+// ═══════════════════════════════════════════════
+const SB_KEYS = ['pp','21','ll','bi'];
+let SB = { pp:0, '21':0, ll:0, bi:0 };   // current bets
+let SB_LAST = { pp:0, '21':0, ll:0, bi:0 }; // last round bets (for repeat)
+
+function toggleSbPanel(){
+  // no-op — row is always visible when connected
+}
+
+function toggleSbFocus(key){
+  // no-op
+}
+
+function addSb(e, key, amt){
+  e.stopPropagation();
+  if(document.getElementById('sb-'+key).classList.contains('locked')) return;
+  if(!G.wallet.ok){ openModal(); return; }
+  if(SB[key]+amt > G.bal){ toast('Not enough KAS for side bet'); return; }
+  const mainAndOtherSb = G.bet + SB_KEYS.filter(k=>k!==key).reduce((s,k)=>s+SB[k],0);
+  if(mainAndOtherSb + SB[key]+amt > MAX_TOTAL){ toast('Max total stake is KAS 100'); return; }
+  SB[key] += amt;
+  updateSbUI();
+  sfx.chip();
+}
+
+function clearSb(e, key){
+  e.stopPropagation();
+  if(document.getElementById('sb-'+key).classList.contains('locked')) return;
+  SB[key] = 0;
+  updateSbUI();
+}
+
+function clearAllSb(){
+  SB_KEYS.forEach(k => SB[k] = 0);
+  updateSbUI();
+}
+
+function lockSbBets(){
+  SB_KEYS.forEach(k => {
+    document.getElementById('sb-'+k).classList.add('locked');
+    document.getElementById('sbRes-'+k).classList.remove('show');
+  });
+}
+
+function unlockSbBets(){
+  SB_KEYS.forEach(k => {
+    document.getElementById('sb-'+k).classList.remove('locked','won','lost');
+    document.getElementById('sbRes-'+k).classList.remove('show');
+  });
+}
+
+function updateSbUI(){
+  SB_KEYS.forEach(k => {
+    const el  = document.getElementById('sbAmt-'+k);
+    const pill= document.getElementById('sb-'+k);
+    el.textContent = 'KAS '+(SB[k]||0).toLocaleString();
+    el.className   = 'sb-pill-amt'+(SB[k]>0?' placed':'');
+    pill.classList.toggle('active', SB[k]>0);
+  });
+  updBet(); // refresh total stake indicator
+}
+
+function totalSbDeducted(){
+  return SB_KEYS.reduce((s,k) => s+SB[k], 0);
+}
+
+// ── SIDE BET RESOLUTION ──
+function resolveSideBets(){
+  const p = G.player[0];
+  const d = G.dealer;
+  let sbNet = 0; // true net: winnings minus losses
+
+  if(SB.pp > 0){
+    const mult = calcPerfectPairs(p);
+    showSbResult('pp', SB.pp, mult, ppComboName(p));
+    if(mult > 0){ G.bal += SB.pp * mult; sbNet += SB.pp*(mult-1); }
+    else { sbNet -= SB.pp; } // lost the bet
+    document.getElementById('sb-pp').classList.add(mult>0?'won':'lost');
+  }
+
+  if(SB['21'] > 0){
+    const {mult, name} = calc21plus3(p, d);
+    showSbResult('21', SB['21'], mult, name);
+    if(mult > 0){ G.bal += SB['21'] * mult; sbNet += SB['21']*(mult-1); }
+    else { sbNet -= SB['21']; }
+    document.getElementById('sb-21').classList.add(mult>0?'won':'lost');
+  }
+
+  if(SB.ll > 0){
+    const {mult, name} = calcTrips(p);
+    showSbResult('ll', SB.ll, mult, name);
+    if(mult > 0){ G.bal += SB.ll * mult; sbNet += SB.ll*(mult-1); }
+    else { sbNet -= SB.ll; }
+    document.getElementById('sb-ll').classList.add(mult>0?'won':'lost');
+  }
+
+  updateBalance();
+  return sbNet;
+}
+
+function resolveBustIt(){
+  if(SB.bi <= 0) return 0;
+  const d = G.dealer;
+  const busted = total(d) > 21;
+  if(busted){
+    const cards = d.length;
+    const mult = cards===3?2 : cards===4?3 : cards===5?10 : cards===6?50 : 250;
+    showSbResult('bi', SB.bi, mult, cards+'-card bust');
+    G.bal += SB.bi * mult;
+    document.getElementById('sb-bi').classList.add('won');
+    updateBalance();
+    return SB.bi*(mult-1);
+  } else {
+    showSbResult('bi', SB.bi, 0, 'Dealer stands');
+    document.getElementById('sb-bi').classList.add('lost');
+    return -SB.bi; // lost the bet
+  }
+}
+
+function showSbResult(key, bet, mult, combo){
+  const res  = document.getElementById('sbRes-'+key);
+  const lbl  = document.getElementById('sbResLbl-'+key);
+  const com  = document.getElementById('sbResCom-'+key);
+  if(mult > 0){
+    lbl.className = 'sr-win';
+    lbl.textContent = '+KAS '+(bet*(mult-1)).toLocaleString();
+    com.textContent = '(x'+mult+') '+combo;
+  } else {
+    lbl.className = 'sr-lose';
+    lbl.textContent = '-KAS '+bet.toLocaleString();
+    com.textContent = combo;
+  }
+  res.classList.add('show');
+}
+
+// ── CALCULATION HELPERS ──
+
+function calcPerfectPairs(hand){
+  if(hand.length < 2) return 0;
+  const [c1,c2] = hand;
+  if(c1.r !== c2.r) return 0;
+  if(c1.s === c2.s) return 30;  // Suited pair
+  const red = new Set(['♥','♦']);
+  const sameColor = (red.has(c1.s) && red.has(c2.s)) || (!red.has(c1.s) && !red.has(c2.s));
+  return sameColor ? 12 : 6;    // Colored pair : Mixed pair
+}
+function ppComboName(hand){
+  if(hand.length<2||hand[0].r!==hand[1].r) return 'No pair';
+  if(hand[0].s===hand[1].s) return 'Suited pair (x30)';
+  const r=new Set(['♥','♦']);
+  const sc=(r.has(hand[0].s)&&r.has(hand[1].s))||(!r.has(hand[0].s)&&!r.has(hand[1].s));
+  return sc?'Colored pair (x12)':'Mixed pair (x6)';
+}
+
+function calc21plus3(hand, dealer){
+  if(hand.length<2||dealer.length<1) return {mult:0,name:'No combo'};
+  const three = [hand[0], hand[1], dealer[0]];
+  const ranks = three.map(c=>c.r);
+  const suits = three.map(c=>c.s);
+  const vals  = three.map(c=>val(c.r)).sort((a,b)=>a-b);
+
+  const allSameSuit = suits.every(s=>s===suits[0]);
+  const allSameRank = ranks.every(r=>r===ranks[0]);
+
+  // Straight: consecutive ranks (treat A as 1 or 14)
+  const rankOrder = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+  const idxs = ranks.map(r=>rankOrder.indexOf(r)).sort((a,b)=>a-b);
+  const isStraight = (idxs[2]-idxs[1]===1 && idxs[1]-idxs[0]===1) ||
+    (idxs[0]===0 && idxs[1]===11 && idxs[2]===12); // A-Q-K wrap
+
+  if(allSameRank && allSameSuit) return {mult:100, name:'Suited trips (x100)'};
+  if(allSameRank)                return {mult:30,  name:'Three of a kind (x30)'};
+  if(isStraight && allSameSuit)  return {mult:40,  name:'Straight flush (x40)'};
+  if(isStraight)                 return {mult:10,  name:'Straight (x10)'};
+  if(allSameSuit)                return {mult:5,   name:'Flush (x5)'};
+  return {mult:0, name:'No combo'};
+}
+
+function calcTrips(hand){
+  // Needs at least 3 cards
+  if(hand.length < 3) return {mult:0, name:'Need 3 cards'};
+  const [c1, c2, c3] = hand;
+  if(c1.r !== c2.r || c2.r !== c3.r) return {mult:0, name:'No trips'};
+  // Three of a kind!
+  const allSameSuit = c1.s===c2.s && c2.s===c3.s;
+  const sameColor = ()=>{
+    const red = new Set(['♥','♦']);
+    return (red.has(c1.s)===red.has(c2.s)) && (red.has(c2.s)===red.has(c3.s));
+  };
+  if(allSameSuit)    return {mult:100, name:'Suited Trips (x100)'};
+  if(sameColor())    return {mult:30,  name:'Colored Trips (x30)'};
+                     return {mult:5,   name:'Mixed Trips (x5)'};
+}
+
+// Bust It is resolved in resolveBustIt() after dealer plays
+
+// save side bets for repeat
+function saveSbLast(){
+  SB_KEYS.forEach(k => SB_LAST[k] = SB[k]);
+}
+function repeatSb(){
+  SB_KEYS.forEach(k => SB[k] = SB_LAST[k]);
+  updateSbUI();
+}
+
+
+const RED_S=new Set(['♥','♦']);
+const SUITS=['♠','♣','♥','♦'],RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+function buildShoe(n=6){
+  const d=[];
+  for(let i=0;i<n;i++)SUITS.forEach(s=>RANKS.forEach(r=>d.push({r,s})));
+  for(let i=d.length-1;i>0;i--){const j=~~(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}
+  return d;
+}
+function val(r){if(r==='A')return 11;if(['J','Q','K'].includes(r))return 10;return+r;}
+function total(h){let t=0,a=0;h.forEach(c=>{t+=val(c.r);if(c.r==='A')a++;});
+  while(t>21&&a){t-=10;a--;}return t;}
+function isSoft(h){let t=0,a=0;h.forEach(c=>{t+=val(c.r);if(c.r==='A')a++;});
+  return a>0&&t<=21&&(t-10)>0;}
+function isBJ(h){return h.length===2&&total(h)===21;}
+
+// ═══════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════
+// Anti-tamper: silent devtools detection
+(()=>{ const _t=new Date(); Object.defineProperty(_t,'toString',{get:()=>{window._dtOpen=true;return ()=>'';}}); })();
+let G={
+  bal:0, bet:0, lastBet:0, deck:[], di:0,
+  dealer:[], player:[[]], bets:[0], aIdx:0, ins:0,
+  phase:'idle',
+  stats:{hands:0,wins:0,losses:0,pushes:0,bj:0,pnl:0,bigWin:0},
+  wallet:{ok:false,addr:'',mode:''},
+  hToday:0,
+};
+
+// Leaderboards — separate demo vs real
+let LB={demo:[],real:[]};
+
+// Seed demo LB
+[['kaspa:qp9xq8vz2j',24200],['kaspa:qr2mv3xk1n',17850],
+ ['kaspa:qz8lkp4w9m',11300],['kaspa:qx3nmqt5r2',7100],
+ ['kaspa:qa7wpnc8x6',4200]].forEach(([a,p])=>LB.demo.push({addr:a,pnl:p,mode:'demo'}));
+
+// Seed real LB
+[['kaspa:qqze4mn9xp',88500],['kaspa:qp8vfk2rts',54200],
+ ['kaspa:qnr7xlc4jw',31100],['kaspa:qy2gmbh8eq',19800],
+ ['kaspa:qf5vdxt3rk',8300]] .forEach(([a,p])=>LB.real.push({addr:a,pnl:p,mode:'real'}));
+
+// ── NICKNAMES ──
+// stored as {addr: nickname} in localStorage
+let NICKNAMES = {};
+try {
+  const raw = JSON.parse(localStorage.getItem('kas21_nicks')||'{}');
+  // Prevent prototype pollution: only accept plain string key/values
+  if(raw && typeof raw==='object' && !Array.isArray(raw)){
+    Object.keys(raw).forEach(k=>{
+      if(typeof k==='string' && typeof raw[k]==='string' &&
+         k!=='__proto__' && k!=='constructor' && k!=='prototype'){
+        NICKNAMES[k]=raw[k].slice(0,18);
+      }
+    });
+  }
+} catch(e){}
+function saveNicknames(){ try{localStorage.setItem('kas21_nicks',JSON.stringify(NICKNAMES));}catch(e){} }
+// ── SECURITY HELPERS ──
+function escHtml(s){
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+function isValidKaspaAddr(addr){
+  return typeof addr==='string' && /^kaspa:[a-z0-9]{40,80}$/.test(addr);
+}
+
+function getNick(addr){ return NICKNAMES[addr] || null; }
+function displayName(addr){
+  const nick = getNick(addr);
+  if(nick) return `<span class="lb-nick">${escHtml(nick)}</span>`;
+  return `<span class="lb-addr">${escHtml(String(addr).slice(0,14))}…</span>`;
+}
+
+// ── LAST HAND for share ──
+let LAST_HAND = null; // set in resolveAll
+
+function draw(){
+  if(G.di>=G.deck.length-52){G.deck=buildShoe(6);G.di=0;}
+  return G.deck[G.di++];
+}
+
+// ═══════════════════════════════════════════════
+//  WALLET
+// ═══════════════════════════════════════════════
+function openModal(){document.getElementById('walletModal').classList.add('open');}
+function closeModal(){document.getElementById('walletModal').classList.remove('open');}
+function switchMTab(t){
+  ['kw','kt','dm'].forEach(id=>{
+    document.getElementById('mtab-'+id).classList.toggle('a',id===t);
+    document.getElementById('msec-'+id).classList.toggle('a',id===t);
+  });
+}
+
+async function connectKW(){
+  if(!window.kasware){toast('Install KasWare first','err');setTimeout(()=>window.open('https://kasware.xyz','_blank'),1200);return;}
+  try{
+    const kw=window.kasware;
+    if(typeof kw?.requestAccounts!=='function'||typeof kw?.getBalance!=='function'){toast('Invalid wallet extension','err');return;}
+    const[rawAddr]=await kw.requestAccounts();
+    const addr = String(rawAddr||'').toLowerCase().trim();
+    if(!isValidKaspaAddr(addr)){toast('Invalid wallet address','err');return;}
+    const s=await kw.getBalance();
+    const bal=Math.floor(((s&&s.total)||s||0)/1e8);
+    if(bal<0||!isFinite(bal)){toast('Could not read balance','err');return;}
+    G.wallet={ok:true,addr,mode:'real',provider:'kasware'};
+    G.bal=bal;
+    finishConnect();
+  }catch(e){toast('Connection failed','err');console.warn('KasWare:',e);}
+}
+
+async function connectKastle(){
+  if(!window.kastle){toast('Install Kastle first','err');setTimeout(()=>window.open('https://kastle.cc','_blank'),1200);return;}
+  try{
+    const kt=window.kastle;
+    if(typeof kt?.requestAccounts!=='function'||typeof kt?.getBalance!=='function'){toast('Invalid wallet extension','err');return;}
+    const[rawAddr]=await kt.requestAccounts();
+    const addr = String(rawAddr||'').toLowerCase().trim();
+    if(!isValidKaspaAddr(addr)){toast('Invalid wallet address','err');return;}
+    const s=await kt.getBalance();
+    const bal=Math.floor(((s&&s.total)||s||0)/1e8);
+    if(bal<0||!isFinite(bal)){toast('Could not read balance','err');return;}
+    G.wallet={ok:true,addr,mode:'real',provider:'kastle'};
+    G.bal=bal;
+    finishConnect();
+  }catch(e){toast('Connection failed','err');console.warn('Kastle:',e);}
+}
+
+function connectDemo(){
+  const raw=+(document.getElementById('demoAmt').value);
+  const amt=(!isFinite(raw)||raw<500)?10000:Math.min(Math.floor(raw),1000000);
+  G.wallet={ok:true,addr:'kaspa:demo'+Math.random().toString(36).slice(2,9),mode:'demo'};
+  G.bal=amt;
+  finishConnect();
+}
+
+function finishConnect(){
+  closeModal();
+  document.getElementById('wdot').classList.add('live');
+  document.getElementById('wlbl').textContent=G.wallet.addr.slice(0,12)+'...';
+  document.getElementById('walletBtn').classList.add('on');
+  document.getElementById('sbRow').style.display='flex';
+  updateBalance();
+  refreshAllPanels();
+  toast('Connected — good luck! 🎴');
+}
+
+// ═══════════════════════════════════════════════
+//  BETTING
+// ═══════════════════════════════════════════════
+const MAX_TOTAL = 100;
+
+function addBet(n){
+  if(G.phase!=='idle'&&G.phase!=='betting')return;
+  if(!G.wallet.ok){openModal();return;}
+  if(G.bet+n>G.bal){toast('Not enough KAS');return;}
+  const sbNow = SB_KEYS.reduce((s,k)=>s+SB[k],0);
+  if(G.bet+n+sbNow > MAX_TOTAL){toast('Max total stake is KAS 100 (incl. side bets)');return;}
+  sfx.chip();G.bet+=n;G.phase='betting';updBet();
+}
+function clearBet(){G.bet=0;G.phase='idle';updBet();}
+function repeatBet(){clearBet();if(G.lastBet)addBet(Math.min(G.lastBet,G.bal));}
+function halfBet(){if(G.bet>1){G.bet=Math.floor(G.bet/2);updBet();}}
+function maxBet(){clearBet();const sbNow=SB_KEYS.reduce((s,k)=>s+SB[k],0);addBet(Math.min(G.bal,Math.max(0,MAX_TOTAL-sbNow)));}
+function updBet(){
+  const sbNow=SB_KEYS.reduce((s,k)=>s+SB[k],0);
+  const total=G.bet+sbNow;
+  document.getElementById('betAmt').textContent=total.toLocaleString();
+  const note=document.getElementById('betTotalNote');
+  if(note){
+    if(G.bet>0 && sbNow>0) note.textContent='(hand '+G.bet+' + side '+sbNow+')';
+    else note.textContent='';
+    note.style.color = total>=100 ? 'var(--red)' : total>=75 ? 'var(--gold)' : 'var(--muted)';
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  DEAL
+// ═══════════════════════════════════════════════
+async function deal(){
+  if(!G.wallet.ok){openModal();return;}
+  // Clamp bet — guards against console manipulation of G.bet
+  G.bet = Math.max(1, Math.min(Math.floor(isFinite(G.bet) ? G.bet : 1), MAX_TOTAL, G.bal));
+  if(G.bet<1){toast('Place a bet first!');return;}
+  if(G.bet>G.bal){toast('Not enough KAS');return;}
+  // Deduct side bets
+  const sbTotal = totalSbDeducted();
+  if(sbTotal > 0 && sbTotal > G.bal - G.bet){ toast('Not enough KAS for side bets'); return; }
+  sfx.clk();
+  saveSbLast();
+  if(sbTotal > 0){ G.bal -= sbTotal; updateBalance(); }
+  lockSbBets();
+  G.bal-=G.bet;G.lastBet=G.bet;G.phase='playing';
+  G.hToday++;document.getElementById('tickH').textContent=G.hToday;
+  if(!G.deck.length)G.deck=buildShoe(6);
+  G.dealer=[];G.player=[[]];G.bets=[G.bet];G.aIdx=0;G.ins=0;
+  // Clear card DOM so fresh deal animates each card
+  document.getElementById('dealerCards').innerHTML='';
+  const pa=document.getElementById('playerArea');pa.innerHTML='';
+  showBet(false); hideActiveBetBar(); setHint('Dealing...');
+  document.getElementById('sbRow').style.display='none';
+  renderAll();
+  await dl();G.player[0].push(draw());sfx.deal();renderAll();await dl(200);
+  await dl();G.dealer.push(draw());sfx.deal();renderAll();await dl(200);
+  await dl();G.player[0].push(draw());sfx.deal();renderAll();await dl(200);
+  await dl();G.dealer.push({...draw(),hidden:true});sfx.deal();renderAll();await dl(320);
+  updateBalance();
+  if(G.dealer[0].r==='A'){document.getElementById('insBar').classList.add('show');setHint('Insurance?');return;}
+  afterIns();
+}
+
+function afterIns(){
+  document.getElementById('insBar').classList.remove('show');
+  if(isBJ(G.player[0])||isBJ(G.dealer)){revealDealer();const sbNet=resolveSideBets()+resolveBustIt();resolveAll(sbNet);return;}
+  setHint('Your turn — Hand 1');
+  document.getElementById('sbRow').style.display='flex';
+  showPlay(true);
+  showActiveBetBar();
+  enableBtns();
+}
+function takeIns(){
+  const ins=Math.floor(G.bets[0]/2);
+  if(ins>G.bal){toast('Not enough balance');noIns();return;}
+  G.bal-=ins;G.ins=ins;updateBalance();toast('Insurance: KAS '+ins);afterIns();
+}
+function noIns(){G.ins=0;afterIns();}
+
+// ═══════════════════════════════════════════════
+//  PLAYER ACTIONS
+// ═══════════════════════════════════════════════
+function hit(){
+  sfx.clk();sfx.deal();
+  G.player[G.aIdx].push(draw());renderAll();updateActiveBetBar();
+  const t=total(G.player[G.aIdx]);
+  if(t>21){ sfx.bust(); nextHand(); }
+  else if(t===21){ stand(); }
+  else{
+    document.getElementById('bDouble').disabled=true;
+    document.getElementById('bSplit').disabled=true;
+    document.getElementById('bDouble').classList.remove('low-funds');
+  }
+}
+
+function stand(){ sfx.clk(); nextHand(); }
+
+function dbl(){
+  // Check balance — offer add-funds if short
+  const needed = G.bets[G.aIdx];
+  if(needed > G.bal){
+    showAddFunds(needed);
+    return;
+  }
+  sfx.clk();
+  G.bal -= needed; G.bets[G.aIdx] += needed; updateBalance(); updateActiveBetBar();
+  G.player[G.aIdx].push(draw()); sfx.deal(); renderAll();
+  if(total(G.player[G.aIdx])>21) sfx.bust();
+  nextHand();
+}
+
+function spl(){
+  sfx.clk();
+  const h=G.player[G.aIdx];
+  if(h.length!==2||h[0].r!==h[1].r)return;
+  if(G.bets[G.aIdx]>G.bal){toast('Not enough KAS to split');return;}
+  G.bal-=G.bets[G.aIdx]; updateBalance();
+  const ex=G.bets[G.aIdx];
+  const nh=[h.pop()];
+  G.player.splice(G.aIdx+1,0,nh);
+  G.bets.splice(G.aIdx+1,0,ex);
+  h.push(draw()); sfx.deal();
+  nh.push(draw()); sfx.deal();
+  renderAll(); updateActiveBetBar(); enableBtns();
+  setHint('Hand 1 of '+G.player.length+' — Hit, Stand or Double');
+}
+
+function nextHand(){
+  if(G.aIdx<G.player.length-1){
+    G.aIdx++;
+    renderAll();
+    updateActiveBetBar();
+    enableBtns();
+    const h=G.player[G.aIdx];
+    const canDbl = h.length===2;
+    setHint('Hand '+(G.aIdx+1)+' of '+G.player.length+(canDbl?' — Hit, Stand or Double':' — your turn'));
+  } else {
+    showPlay(false);
+    hideActiveBetBar();
+    dealerTurn();
+  }
+}
+
+// ── ADD FUNDS / DOUBLE FLOW ──
+function showAddFunds(needed){
+  document.getElementById('afHandBet').textContent = 'KAS '+G.bets[G.aIdx].toLocaleString();
+  document.getElementById('afNeeded').textContent  = 'KAS '+needed.toLocaleString();
+  document.getElementById('afBal').textContent     = 'KAS '+G.bal.toLocaleString();
+  // show correct section
+  const isDemo = G.wallet.mode==='demo';
+  document.getElementById('afDemoSection').style.display = isDemo?'block':'none';
+  document.getElementById('afRealSection').style.display = !isDemo?'block':'none';
+  if(isDemo) document.getElementById('afAddAmt').value = needed - G.bal + 1000;
+  document.getElementById('addFundsModal').classList.add('open');
+}
+
+function closeAddFunds(){
+  document.getElementById('addFundsModal').classList.remove('open');
+}
+
+function addFundsAndDouble(){
+  const addRaw = +(document.getElementById('afAddAmt').value)||0;
+  const add = Math.max(1, Math.min(Math.floor(isFinite(addRaw)?addRaw:0), 1000000));
+  G.bal += add;
+  updateBalance();
+  toast('Added KAS '+add.toLocaleString()+' to demo balance');
+  closeAddFunds();
+  if(G.phase==='playing') dbl();
+}
+
+function retryDouble(){
+  closeAddFunds();
+  // Re-check balance — user may have topped up wallet externally
+  if(G.wallet.mode==='real'){
+    const prov=G.wallet.provider||'kasware';
+    const w=prov==='kastle'?window.kastle:window.kasware;
+    if(!w||typeof w.getBalance!=='function'){toast('Wallet not available','err');return;}
+    w.getBalance().then(s=>{
+      const fresh=Math.floor(((s&&s.total)||s||0)/1e8);
+      if(fresh>=0&&isFinite(fresh)) G.bal=fresh; updateBalance();
+      if(G.bets[G.aIdx]<=G.bal){ dbl(); }
+      else{ toast('Still not enough balance','err'); }
+    }).catch(()=>toast('Could not refresh balance','err'));
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  HOUSE RULES  (transparent — shown to player)
+// ═══════════════════════════════════════════════
+const RULES = {
+  bjPays:       '3:2',      // Blackjack pays 3:2
+  bjMult:       2.5,        // 3:2 = 1.5 profit + bet back = 2.5x returned
+  dealerHitS17: true,       // Dealer hits on Soft 17 (S17)
+  doubleOn:     [9,10,11],  // Double allowed only on hard 9, 10, or 11
+  noReSplit:    false,      // Re-splitting allowed
+  decks:        6,
+  houseEdge:    '~2.0%',
+};
+
+// ═══════════════════════════════════════════════
+//  DEALER
+// ═══════════════════════════════════════════════
+async function dealerTurn(){
+  document.getElementById('sbRow').style.display='none';
+  const allBust = G.player.every(h => total(h) > 21);
+  if(allBust){
+    revealDealer();
+    const sbNet = resolveSideBets() + resolveBustIt();
+    resolveAll(sbNet);
+    return;
+  }
+
+  setHint('Dealer playing...'); revealDealer(); renderAll(); await dl(650);
+  while(total(G.dealer)<17 || (RULES.dealerHitS17 && isSoft(G.dealer) && total(G.dealer)===17)){
+    G.dealer.push(draw()); sfx.deal(); renderAll(); await dl(520);
+  }
+  const sbNet = resolveSideBets() + resolveBustIt();
+  resolveAll(sbNet);
+}
+function revealDealer(){ G.dealer.forEach(c=>delete c.hidden); }
+
+// ═══════════════════════════════════════════════
+//  RESOLVE
+// ═══════════════════════════════════════════════
+function resolveAll(sbNet=0){
+  G.phase='done';
+  const dt=total(G.dealer),dbust=dt>21;
+  let wins=0,losses=0,pushes=0,bjs=0,ret=0;
+  G.player.forEach((h,i)=>{
+    const pt=total(h),bust=pt>21,bet=G.bets[i];
+    const pBJ=isBJ(h)&&G.player.length===1;
+    const dBJ=isBJ(G.dealer);
+    if(bust){losses++;}
+    else if(pBJ&&!dBJ){ ret+=Math.floor(bet*RULES.bjMult); bjs++;wins++; }
+    else if(dBJ&&!pBJ){losses++;}
+    else if(pBJ&&dBJ) {ret+=bet;pushes++;}
+    else if(dbust||pt>dt){ret+=bet*2;wins++;}
+    else if(pt===dt)   {ret+=bet;pushes++;}
+    else               {losses++;}
+  });
+  if(G.ins>0&&isBJ(G.dealer)){ret+=G.ins*3;toast('Insurance paid KAS '+(G.ins*3));}
+  G.bal+=ret;
+  const handNet = ret-G.bets.reduce((a,b)=>a+b,0)-G.ins;
+  const totalNet = handNet + sbNet;  // hand profit + side bet profit
+  G.stats.hands+=G.player.length;
+  G.stats.wins+=wins;G.stats.losses+=losses;G.stats.pushes+=pushes;G.stats.bj+=bjs;
+  G.stats.pnl+=totalNet;if(totalNet>G.stats.bigWin)G.stats.bigWin=totalNet;
+  updateBalance();
+  addLog(wins,losses,pushes,bjs,totalNet);
+  updateLB(G.wallet.addr,G.stats.pnl,G.wallet.mode);
+  // save for share
+  LAST_HAND = {
+    main: bjs>0?'bj':wins>0?'win':losses>0&&wins===0&&pushes===0?'lose':'push',
+    net: totalNet, handNet, sbNet,
+    playerCards: G.player[0].map(c=>c.r+c.s).join(' '),
+    dealerCards:  G.dealer.map(c=>c.r+c.s).join(' '),
+    playerTotal:  total(G.player[0]),
+    dealerTotal:  total(G.dealer),
+    bet: G.bets[0],
+    balance: G.bal,
+  };
+  refreshAllPanels();
+  let main=losses>0&&wins===0&&pushes===0?'lose':bjs>0?'bj':wins>0?'win':'push';
+  // If hand lost/pushed but side bets made it net positive → show as win
+  if((main==='lose'||main==='push') && totalNet>0) main='win';
+  renderAll();
+  showResult(main, totalNet, ret, sbNet);
+  if(main==='bj')       {sfx.bj();  celebrate('#FFD166','#49EACB');}
+  else if(main==='win') {sfx.win(); celebrate('#49EACB');}
+  else if(main==='lose'){sfx.lose();}
+  else                  {sfx.push();}
+}
+
+// ═══════════════════════════════════════════════
+//  RESULT PANEL
+// ═══════════════════════════════════════════════
+function showResult(main, net, ret, sbNet=0){
+  const icons ={bj:'🃏',win:'🎉',lose:'💥',push:'🤝'};
+  const titles={bj:'BLACKJACK!',win:'YOU WIN',lose:'BUST',push:'PUSH'};
+  const cols  ={bj:'var(--gold)',win:'var(--kas)',lose:'var(--red)',push:'var(--gold)'};
+  const sign = net>0?'+' : '';
+  const hasSb = totalSbDeducted() > 0;
+  const handNet = net - sbNet;
+
+  document.getElementById('rIcon').textContent  = icons[main];
+  document.getElementById('rTitle').textContent = titles[main];
+  const safeMain = ['bj','win','lose','push'].includes(main)?main:'push';
+  document.getElementById('rTitle').className   = 'rp-title '+safeMain;
+  document.getElementById('rAmt').innerHTML     =
+    `<span style="font-size:0.7em;color:var(--kas)">KAS</span> ${sign}${net.toLocaleString()}`;
+
+  // Clear breakdown when side bets are involved
+  let sub = '';
+  if(hasSb){
+    const hSign  = handNet>=0?'+':'';
+    const sbSign = sbNet>=0?'+':'';
+    sub = `Hand ${hSign}${handNet.toLocaleString()}  •  Side bets ${sbSign}${sbNet.toLocaleString()}  •  Enter / Space`;
+  } else {
+    sub = `Returned KAS ${ret.toLocaleString()}  •  Enter / Space`;
+  }
+  document.getElementById('rSub').textContent = sub;
+
+  const p=document.getElementById('resultPanel');
+  p.style.setProperty('--rp-col',cols[main]);
+  p.classList.add('show');
+  document.getElementById('sbRow').style.display='flex';
+}
+function nextRound(){
+  document.getElementById('resultPanel').classList.remove('show');
+  G.bet=0;G.phase='idle';G.dealer=[];G.player=[[]];G.bets=[0];G.aIdx=0;
+  showPlay(false); showBet(true); hideActiveBetBar();
+  updBet(); setHint('Place your bet and press DEAL'); renderAll();
+  // Reset side bets for new round
+  clearAllSb(); unlockSbBets();
+}
+function repeatAndDeal(){
+  nextRound();
+  document.getElementById('sbRow').style.display='none'; // hide immediately — deal() manages visibility
+  setTimeout(()=>{
+    repeatBet();
+    repeatSb();
+    setTimeout(deal,100);
+  },50);
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════
+function renderAll(){renderDealer();renderPlayer();}
+
+function renderDealer(){
+  const el=document.getElementById('dealerCards');
+  const badge=document.getElementById('dealerBadge');
+  const sc=document.getElementById('dealerScore');
+  const sf=document.getElementById('dealerSoft');
+  if(!G.dealer.length){el.innerHTML='';sc.textContent='—';badge.className='sbadge';sf.textContent='';return;}
+
+  // Sync cards: only add new ones, update hidden→revealed in place
+  const existing=el.querySelectorAll('.card');
+  G.dealer.forEach((c,i)=>{
+    if(i < existing.length){
+      // Card already rendered — if it was hidden and now revealed, flip it
+      const wasHidden=existing[i].querySelector('.card-back');
+      if(wasHidden && !c.hidden){
+        existing[i].innerHTML='';
+        const isR=RED_S.has(c.s);
+        const f=document.createElement('div');
+        f.className='card-face '+(isR?'suit-r':'suit-b');
+        f.innerHTML=`<div class="card-tl"><span class="card-r">${c.r}</span><span class="card-s">${c.s}</span></div>
+          <div class="card-center">${c.s}</div>
+          <div class="card-br"><span class="card-r">${c.r}</span><span class="card-s">${c.s}</span></div>`;
+        existing[i].appendChild(f);
+        existing[i].style.animation='none';
+      }
+    } else {
+      // New card — append with animation
+      el.appendChild(mkCard(c,!!c.hidden));
+    }
+  });
+
+  const vis=G.phase==='playing'?[G.dealer[0]]:G.dealer;
+  const t=total(vis);
+  if(G.phase==='playing'){ sc.textContent=t; sf.textContent=' ?'; }
+  else { sc.textContent=t; sf.textContent=(isSoft(G.dealer)&&t<=21)?'SOFT':''; }
+  const dt=total(G.dealer);
+  badge.className='sbadge'+(dt>21?' bust':isBJ(G.dealer)?' bj':'');
+}
+
+function renderPlayer(){
+  const area=document.getElementById('playerArea');
+  const lbl=document.getElementById('pzLabel');
+
+  if(G.player.length===1){
+    lbl.textContent='PLAYER';
+    const h=G.player[0],t=total(h);
+    const sc=h.length?`<div class="sbadge${isBJ(h)?' bj':t>21?' bust':''}" style="margin-bottom:10px"><span style="font-family:Orbitron;font-size:1.4rem;font-weight:900">${t}</span>${isBJ(h)?'<span style="font-size:0.65rem;color:var(--gold)">BJ</span>':t>21?'<span style="font-size:0.65rem">BUST</span>':''}<span style="font-size:0.52rem;color:var(--muted);font-weight:400">${G.bets[0]?'Bet KAS '+G.bets[0]:''}</span></div>`:'';
+
+    // Update score badge
+    let scoreDiv=area.querySelector('.player-score-wrap');
+    if(!scoreDiv){
+      scoreDiv=document.createElement('div');
+      scoreDiv.className='player-score-wrap';
+      area.appendChild(scoreDiv);
+    }
+    scoreDiv.innerHTML=sc;
+
+    // Sync cards row
+    let row=area.querySelector('.cards-row');
+    if(!row){row=document.createElement('div');row.className='cards-row';area.appendChild(row);}
+    const existing=row.querySelectorAll('.card');
+    h.forEach((c,i)=>{
+      if(i >= existing.length) row.appendChild(mkCard(c,false));
+    });
+  } else {
+    // Split — full re-render (rare, only on split action)
+    lbl.textContent='PLAYER — SPLIT';
+    area.innerHTML='';
+    const grid=document.createElement('div');grid.className='split-row';
+    G.player.forEach((h,i)=>{
+      const t=total(h),active=i===G.aIdx&&G.phase==='playing';
+      const div=document.createElement('div');
+      div.className='split-hand'+(active?' active':'');
+      div.innerHTML=`<div class="split-lbl">HAND ${i+1}${active?' ◆':''}</div>
+        <div class="sbadge${t>21?' bust':''}" style="margin-bottom:6px;font-size:1.2rem">
+          ${t}${t>21?'<span style="font-size:0.6rem">BUST</span>':''}<span style="font-size:0.48rem;color:var(--muted);font-weight:400">Bet KAS ${G.bets[i]}</span>
+        </div>`;
+      const row=document.createElement('div');row.className='cards-row';row.style.minHeight='90px';
+      h.forEach((c,ci)=>row.appendChild(mkCard(c,false,ci===h.length-1)));
+      div.appendChild(row);grid.appendChild(div);
+    });
+    area.appendChild(grid);
+  }
+}
+
+function mkCard(card,hidden){
+  const wrap=document.createElement('div');wrap.className='card';
+  if(hidden){
+    const b=document.createElement('div');b.className='card-back';wrap.appendChild(b);
+  } else {
+    const isR=RED_S.has(card.s);
+    const f=document.createElement('div');
+    f.className='card-face '+(isR?'suit-r':'suit-b');
+    f.innerHTML=`<div class="card-tl"><span class="card-r">${card.r}</span><span class="card-s">${card.s}</span></div>
+      <div class="card-center">${card.s}</div>
+      <div class="card-br"><span class="card-r">${card.r}</span><span class="card-s">${card.s}</span></div>`;
+    wrap.appendChild(f);
+  }
+  return wrap;
+}
+
+// ═══════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════
+function showBet(v){
+  document.getElementById('betArea').style.display=v?'flex':'none';
+}
+function showPlay(v){
+  document.getElementById('actionBtns').style.display=v?'grid':'none';
+}
+function showActiveBetBar(){
+  document.getElementById('activeBetBar').classList.add('show');
+  updateActiveBetBar();
+}
+function hideActiveBetBar(){
+  document.getElementById('activeBetBar').classList.remove('show');
+}
+function updateActiveBetBar(){
+  const hand_stake  = G.bets.reduce((a,b)=>a+b,0);
+  const sb_stake    = totalSbDeducted();
+  const total_stake = hand_stake + sb_stake;
+  const handBet     = G.bets[G.aIdx] || 0;
+  const handCount   = G.player.length;
+  document.getElementById('abbTotal').textContent   = 'KAS '+total_stake.toLocaleString()+(sb_stake>0?' (incl. KAS '+sb_stake.toLocaleString()+' side)':'');
+  document.getElementById('abbHand').textContent    = handCount>1 ? 'HAND '+(G.aIdx+1)+' / '+handCount : 'HAND 1';
+  document.getElementById('abbHandBet').textContent = 'KAS '+handBet.toLocaleString();
+}
+
+function enableBtns(){
+  const h=G.player[G.aIdx], t=total(h);
+  const alreadySplit = G.player.length > 1;
+
+  // Double: allowed on any 2-card hand, including hands from a split
+  const canDbl    = h.length === 2;
+  const hasFunds  = G.bets[G.aIdx] <= G.bal;
+
+  // Split: allowed including re-split (max 4 hands)
+  const canSpl = h.length===2 && h[0].r===h[1].r && hasFunds && G.player.length < 4;
+
+  document.getElementById('bHit').disabled   = t >= 21;
+  document.getElementById('bStand').disabled = false;
+  document.getElementById('bSplit').disabled = !canSpl;
+
+  const dblBtn = document.getElementById('bDouble');
+  dblBtn.disabled = !canDbl;
+  dblBtn.classList.toggle('low-funds', canDbl && !hasFunds);
+}
+
+function setHint(t){
+  const el=document.getElementById('phaseHint');
+  el.textContent=t; el.className='phase-hint'+(G.phase==='playing'?' active':'');
+}
+function safeClampBal(){
+  G.bal=Math.max(0,Math.min(isFinite(G.bal)?Math.floor(G.bal):0, 1e9));
+}
+function updateBalance(){
+  safeClampBal();
+  document.getElementById('balDisplay').textContent=G.bal.toLocaleString();
+}
+const dl=(ms=110)=>new Promise(r=>setTimeout(r,ms));
+
+// ═══════════════════════════════════════════════
+//  STATS / LOG / LEADERBOARD — SHARED HTML BUILDERS
+// ═══════════════════════════════════════════════
+let logEntries=[];
+
+function addLog(wins,losses,pushes,bjs,net){
+  const r=bjs>0?'bj':wins>0?'win':pushes>0&&losses===0?'push':'lose';
+  const labels={bj:'BLACKJACK',win:'WIN',push:'PUSH',lose:'LOSE'};
+  const safeNet=isFinite(net)?Math.round(+net):0;
+  const sign=safeNet>0?'+':safeNet<0?'':' ';
+  logEntries.unshift({r,label:labels[r],net:safeNet,sign});
+  if(logEntries.length>50)logEntries.pop();
+}
+
+function buildStatsHTML(){
+  const s=G.stats;
+  const rate=s.hands>0?((s.wins/s.hands)*100).toFixed(1)+'%':'—';
+  const pnlCol=s.pnl>0?'var(--kas)':s.pnl<0?'var(--red)':'var(--text)';
+  return `
+    <div class="stat-grid">
+      <div class="scard"><div class="sl">HANDS</div><div class="sv">${s.hands}</div></div>
+      <div class="scard"><div class="sl">WIN RATE</div><div class="sv">${rate}</div></div>
+      <div class="scard"><div class="sl">WINS</div><div class="sv">${s.wins}</div></div>
+      <div class="scard"><div class="sl">LOSSES</div><div class="sv r">${s.losses}</div></div>
+      <div class="scard"><div class="sl">PUSHES</div><div class="sv">${s.pushes}</div></div>
+      <div class="scard"><div class="sl">BLACKJACKS</div><div class="sv g">${s.bj}</div></div>
+    </div>
+    <div class="pnlrow"><div class="pl">NET P&amp;L</div><div class="pv" style="color:${pnlCol}">KAS ${s.pnl>=0?'+':''}${s.pnl.toLocaleString()}</div></div>
+    <div class="pnlrow"><div class="pl">BIGGEST WIN</div><div class="pv g">KAS ${s.bigWin.toLocaleString()}</div></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border2)">
+      <div style="font-size:0.52rem;color:var(--muted);letter-spacing:3px;margin-bottom:8px">HOUSE RULES</div>
+      <div class="pnlrow" style="margin-bottom:5px"><div class="pl">BLACKJACK PAYS</div><div class="pv" style="color:var(--gold);font-size:0.85rem">3 : 2</div></div>
+      <div class="pnlrow" style="margin-bottom:5px"><div class="pl">DEALER</div><div class="pv" style="font-size:0.75rem">HITS SOFT 17</div></div>
+      <div class="pnlrow" style="margin-bottom:5px"><div class="pl">DOUBLE DOWN</div><div class="pv" style="font-size:0.75rem">ANY 2 CARDS</div></div>
+      <div class="pnlrow" style="margin-bottom:5px"><div class="pl">DOUBLE AFTER SPLIT</div><div class="pv" style="color:var(--kas);font-size:0.75rem">ALLOWED</div></div>
+      <div class="pnlrow"><div class="pl">RE-SPLIT</div><div class="pv" style="color:var(--kas);font-size:0.75rem">ALLOWED (MAX 4)</div></div>
+    </div>`
+;}
+
+function buildLogHTML(){
+  if(!logEntries.length)return'<div style="color:var(--muted);font-size:0.7rem;text-align:center;padding:18px 0">No hands yet</div>';
+  return logEntries.map(e=>`
+    <div class="log-entry">
+      <span class="le-res ${escHtml(e.r)}">${escHtml(e.label)}</span>
+      <span class="le-amt ${e.net>0?'pos':e.net<0?'neg':''}">${escHtml(e.sign)}${Math.abs(+e.net||0).toLocaleString()} KAS</span>
+    </div>`).join('');
+}
+
+let activeLBTab='demo';
+function buildBoardHTML(){
+  const isDemo=activeLBTab==='demo';
+  const data=(isDemo?LB.demo:LB.real).slice(0,10);
+  const rows=data.length?data.map((e,i)=>`
+    <div class="lb-entry">
+      <div class="lb-rank ${i<3?'g':''}">${i===0?'👑':i===1?'②':i===2?'③':'#'+(i+1)}</div>
+      <div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${displayName(e.addr)}</div>
+      <div class="lb-pnl ${e.pnl<0?'neg':''}">${(+e.pnl||0)>=0?'+':''}${(+e.pnl||0).toLocaleString()}</div>
+    </div>`).join('')
+    :'<div style="color:var(--muted);font-size:0.68rem;text-align:center;padding:16px 0">No entries yet</div>';
+  return `
+    <div class="lb-tabs">
+      <button class="lbtab ${isDemo?'a':''}" onclick="switchLBTab('demo',this)">▷ DEMO</button>
+      <button class="lbtab ${!isDemo?'a':''}" onclick="switchLBTab('real',this)">REAL KAS</button>
+    </div>${rows}`;
+}
+
+function switchLBTab(t,btn){
+  activeLBTab=t;
+  refreshAllPanels();
+}
+
+function buildWalletHTML(){
+  if(!G.wallet.ok)return'<div style="color:var(--muted);font-size:0.72rem;text-align:center;padding:18px 0">Not connected</div>';
+  const modeLabel=G.wallet.mode==='real'?'REAL KAS':'DEMO';
+  const nick = getNick(G.wallet.addr);
+  const nickLine = nick
+    ? `<div class="pnlrow" style="margin-bottom:5px"><div class="pl">NICKNAME</div><div class="pv" style="color:var(--kas)">${escHtml(nick)}</div></div>`
+    : '';
+  return `
+    <div class="wmode"><div class="wdot live"></div>${modeLabel} MODE</div>
+    <div class="waddrbox">${escHtml(G.wallet.addr)}</div>
+    ${nickLine}
+    <div class="pnlrow"><div class="pl">BALANCE</div><div class="pv g">KAS ${G.bal.toLocaleString()}</div></div>
+    <div class="pnlrow" style="margin-bottom:12px"><div class="pl">LEADERBOARD</div><div class="pv" style="color:var(--kas)">${modeLabel}</div></div>
+    <button onclick="openNickModal()" style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:rgba(73,234,203,0.05);color:var(--kas);font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:2px;cursor:pointer;">
+      ✏️ ${nick ? 'CHANGE NICKNAME' : 'SET NICKNAME'}
+    </button>`;
+}
+
+function updateLB(addr,pnl,mode){
+  if(!addr||typeof addr!=='string')return;
+  const safePnl=isFinite(pnl)?Math.round(+pnl):0;
+  const list=mode==='real'?LB.real:LB.demo;
+  const idx=list.findIndex(e=>e.addr===addr);
+  if(idx>=0)list[idx].pnl=safePnl;else list.push({addr,pnl:safePnl,mode});
+  list.sort((a,b)=>b.pnl-a.pnl);
+}
+
+// refresh all panel targets (desktop sidebar + mobile sheet cache)
+function refreshAllPanels(){
+  document.getElementById('statsContent').innerHTML=buildStatsHTML();
+  document.getElementById('logContent').innerHTML=buildLogHTML();
+  document.getElementById('boardContent').innerHTML=buildBoardHTML();
+  document.getElementById('walletContent').innerHTML=buildWalletHTML();
+  // if mobile sheet is open, refresh its body too
+  if(document.getElementById('msheetOverlay').classList.contains('open')){
+    renderMSheet(activeMSheet);
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  DESKTOP SIDEBAR TABS
+// ═══════════════════════════════════════════════
+function setSTab(i,btn){
+  document.querySelectorAll('.stab').forEach((t,j)=>t.classList.toggle('a',j===i));
+  document.querySelectorAll('.tpanel').forEach((p,j)=>p.classList.toggle('a',j===i));
+}
+
+// ═══════════════════════════════════════════════
+//  MOBILE SHEETS
+// ═══════════════════════════════════════════════
+let activeMSheet='';
+const SHEET_TITLES={stats:'SESSION STATS',log:'GAME LOG',board:'LEADERBOARD',wallet:'WALLET'};
+
+function openMSheet(which){
+  activeMSheet=which;
+  // update mobile nav active state
+  const keys=['stats','log','board','wallet'];
+  keys.forEach((k,i)=>{
+    document.getElementById('mnav'+i).classList.toggle('a',k===which);
+  });
+  renderMSheet(which);
+  document.getElementById('msheetOverlay').classList.add('open');
+}
+
+function renderMSheet(which){
+  document.getElementById('msheetTitle').textContent=SHEET_TITLES[which]||which.toUpperCase();
+  const body=document.getElementById('msheetBody');
+  if(which==='stats') body.innerHTML=buildStatsHTML();
+  else if(which==='log')   body.innerHTML=buildLogHTML();
+  else if(which==='board') body.innerHTML=buildBoardHTML();
+  else if(which==='wallet')body.innerHTML=buildWalletHTML();
+}
+
+function closeMSheet(e){
+  if(e.target===document.getElementById('msheetOverlay')){
+    document.getElementById('msheetOverlay').classList.remove('open');
+    document.querySelectorAll('.mnav-btn').forEach(b=>b.classList.remove('a'));
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=type==='err'?'err show':'show';
+  clearTimeout(el._t);el._t=setTimeout(()=>el.className='',3000);
+}
+
+// (KAS price ticker removed)
+
+// ═══════════════════════════════════════════════
+//  KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('walletModal').classList.contains('open'))return;
+  if(document.getElementById('resultPanel').classList.contains('show')){
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();nextRound();}
+    if(e.key==='r'||e.key==='R'){e.preventDefault();repeatAndDeal();}
+    return;
+  }
+  const playing=G.phase==='playing', betting=G.phase==='idle'||G.phase==='betting';
+  if(e.key==='h'||e.key==='H'){if(playing&&!document.getElementById('bHit').disabled)hit();}
+  if(e.key==='s'||e.key==='S'){if(playing)stand();}
+  if(e.key==='d'||e.key==='D'){if(playing&&!document.getElementById('bDouble').disabled)dbl();}
+  if(e.key==='p'||e.key==='P'){if(playing&&!document.getElementById('bSplit').disabled)spl();}
+  if(e.key===' '){e.preventDefault();if(betting&&G.bet>0)deal();}
+  if(e.key==='1')addBet(1);if(e.key==='2')addBet(5);if(e.key==='3')addBet(10);
+  if(e.key==='4')addBet(25);if(e.key==='5')addBet(100);if(e.key==='6')addBet(50);
+});
+
+// ═══════════════════════════════════════════════
+//  INFO MODAL
+// ═══════════════════════════════════════════════
+function openInfoModal(){
+  document.getElementById('infoModal').classList.add('open');
+}
+function closeInfoModal(){
+  document.getElementById('infoModal').classList.remove('open');
+}
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape' && document.getElementById('infoModal').classList.contains('open')) closeInfoModal();
+});
+
+// ═══════════════════════════════════════════════
+//  NICKNAME
+// ═══════════════════════════════════════════════
+function openNickModal(){
+  const wrap = document.getElementById('nickModalWrap');
+  document.getElementById('nickInput').value = getNick(G.wallet.addr) || '';
+  wrap.style.display='flex';
+  setTimeout(()=>document.getElementById('nickInput').focus(), 50);
+}
+function closeNickModal(){
+  document.getElementById('nickModalWrap').style.display='none';
+}
+function saveNick(){
+  const raw = document.getElementById('nickInput').value.trim();
+  // sanitize: letters, numbers, spaces, dashes, underscores only
+  const nick = raw.replace(/[^a-zA-Z0-9 _\-\.]/g,'').slice(0,18);
+  if(!nick){ toast('Enter a nickname first','err'); return; }
+  NICKNAMES[G.wallet.addr] = nick;
+  saveNicknames();
+  closeNickModal();
+  refreshAllPanels();
+  toast('Nickname saved: '+nick+' 🎴');
+}
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape' && document.getElementById('nickModalWrap').style.display!=='none') closeNickModal();
+  if(e.key==='Enter'  && document.getElementById('nickModalWrap').style.display!=='none') saveNick();
+});
+
+// ═══════════════════════════════════════════════
+//  SHARE TO X  (canvas share card)
+// ═══════════════════════════════════════════════
+function shareToX(){
+  if(!LAST_HAND){ toast('Play a hand first!'); return; }
+  const h = LAST_HAND;
+
+  // Portrait 9:16 friendly, also fine on Twitter
+  const W=600, H=900;
+  const c = document.createElement('canvas');
+  c.width=W; c.height=H;
+  const x = c.getContext('2d');
+
+  const KAS='#49EACB', GOLD='#F5C842', RED='#F05365', MUT='#4a5568', WHT='#e2e8f0';
+  const mainCol = {bj:GOLD, win:KAS, lose:RED, push:GOLD}[h.main];
+  const sign = h.net>=0?'+':'';
+
+  // ── Background ──
+  const bg = x.createRadialGradient(W/2, H*0.35, 0, W/2, H*0.5, W*1.1);
+  bg.addColorStop(0,'#061510'); bg.addColorStop(1,'#04080D');
+  x.fillStyle=bg; x.fillRect(0,0,W,H);
+
+  // Felt texture grid
+  x.strokeStyle='rgba(255,255,255,0.015)'; x.lineWidth=1;
+  for(let i=0;i<W;i+=32){x.beginPath();x.moveTo(i,0);x.lineTo(i,H);x.stroke();}
+  for(let i=0;i<H;i+=32){x.beginPath();x.moveTo(0,i);x.lineTo(W,i);x.stroke();}
+
+  // Top glow
+  const topGlow=x.createLinearGradient(0,0,0,180);
+  topGlow.addColorStop(0,mainCol+'33'); topGlow.addColorStop(1,'transparent');
+  x.fillStyle=topGlow; x.fillRect(0,0,W,180);
+
+  // Outer border
+  x.strokeStyle=mainCol+'55'; x.lineWidth=2;
+  x.strokeRect(14,14,W-28,H-28);
+  // Inner border
+  x.strokeStyle=mainCol+'18'; x.lineWidth=1;
+  x.strokeRect(20,20,W-40,H-40);
+
+  // ── Header ──
+  x.font='900 20px "Courier New",monospace'; x.fillStyle=KAS; x.textAlign='left';
+  x.shadowColor=KAS; x.shadowBlur=16;
+  x.fillText('KAS · 21', 36, 56);
+  x.shadowBlur=0;
+  x.font='500 11px monospace'; x.fillStyle=MUT;
+  x.fillText('BLACKJACK ON KASPA', 36, 74);
+
+  // Nickname top-right
+  const nick=getNick(G.wallet.addr);
+  const nameStr=String(nick||G.wallet.addr||'').replace(/[<>&"']/g,'').slice(0,18)+((!nick&&G.wallet.addr.length>14)?'…':'');
+  x.font='500 11px monospace'; x.fillStyle=MUT; x.textAlign='right';
+  x.fillText(nameStr, W-36, 56);
+
+  // ── Result label ──
+  const label={bj:'BLACKJACK!',win:'YOU WIN',lose:'BUST',push:'PUSH'}[h.main];
+  x.font='900 52px "Courier New",monospace'; x.fillStyle=mainCol; x.textAlign='center';
+  x.shadowColor=mainCol; x.shadowBlur=36;
+  x.fillText(label, W/2, 148);
+  x.shadowBlur=0;
+
+  // ── Net amount ──
+  x.font='900 72px "Courier New",monospace'; x.fillStyle=mainCol; x.textAlign='center';
+  x.shadowColor=mainCol; x.shadowBlur=28;
+  x.fillText(`${sign}${h.net.toLocaleString()}`, W/2, 228);
+  x.shadowBlur=0;
+  x.font='700 28px "Courier New",monospace'; x.fillStyle=mainCol+'bb';
+  x.fillText('KAS', W/2, 264);
+
+  // ── Divider ──
+  x.strokeStyle=mainCol+'22'; x.lineWidth=1;
+  x.beginPath(); x.moveTo(36,290); x.lineTo(W-36,290); x.stroke();
+
+  // ── Cards helper ──
+  function card(cx, cy, rank, suit, cw=80, ch=112){
+    const isRed=['♥','♦'].includes(suit);
+    x.save();
+    // card shadow
+    x.shadowColor='rgba(0,0,0,0.5)'; x.shadowBlur=12; x.shadowOffsetY=4;
+    x.fillStyle='#f0f2f0';
+    const r=8;
+    x.beginPath();
+    x.moveTo(cx+r,cy); x.lineTo(cx+cw-r,cy); x.arcTo(cx+cw,cy,cx+cw,cy+r,r);
+    x.lineTo(cx+cw,cy+ch-r); x.arcTo(cx+cw,cy+ch,cx+cw-r,cy+ch,r);
+    x.lineTo(cx+r,cy+ch); x.arcTo(cx,cy+ch,cx,cy+ch-r,r);
+    x.lineTo(cx,cy+r); x.arcTo(cx,cy,cx+r,cy,r); x.closePath(); x.fill();
+    x.shadowBlur=0;
+    // border
+    x.strokeStyle='rgba(0,0,0,0.1)'; x.lineWidth=1; x.stroke();
+    // rank top-left
+    x.fillStyle=isRed?'#d02040':'#111827';
+    x.font=`800 ${Math.round(cw*0.27)}px Georgia,serif`; x.textAlign='left';
+    x.fillText(rank, cx+7, cy+Math.round(cw*0.3));
+    // suit center
+    x.font=`${Math.round(cw*0.4)}px Georgia,serif`; x.textAlign='center';
+    x.fillText(suit, cx+cw/2, cy+ch*0.64);
+    x.restore();
+  }
+
+  // ── Dealer section ──
+  const cW=76, cH=108, gap=10;
+  const dCards=G.dealer, pCards=G.player[0];
+  const dX = Math.max(36, (W - dCards.length*(cW+gap)+gap)/2);
+  const pX = Math.max(36, (W - pCards.length*(cW+gap)+gap)/2);
+
+  // Dealer label + badge
+  x.font='700 12px "Courier New",monospace'; x.fillStyle=MUT; x.textAlign='left';
+  x.fillText('DEALER', 36, 318);
+  // Total badge
+  const dtCol = h.dealerTotal>21?RED:WHT;
+  x.fillStyle=h.dealerTotal>21?'rgba(240,83,101,0.15)':'rgba(255,255,255,0.06)';
+  x.beginPath(); x.roundRect(W-80,304,56,22,6); x.fill();
+  x.font='700 14px "Courier New",monospace'; x.fillStyle=dtCol; x.textAlign='center';
+  x.fillText(h.dealerTotal, W-52, 320);
+
+  dCards.forEach((cd,i)=>card(dX+i*(cW+gap), 328, cd.r, cd.s, cW, cH));
+
+  // Divider between dealer/player
+  x.strokeStyle='rgba(73,234,203,0.12)'; x.lineWidth=1;
+  x.beginPath(); x.moveTo(36,328+cH+16); x.lineTo(W-36,328+cH+16); x.stroke();
+  // KAS·21 watermark on divider
+  x.font='500 10px "Courier New",monospace'; x.fillStyle=MUT; x.textAlign='center';
+  x.fillText('♠  ♥  KAS·21  ♦  ♣', W/2, 328+cH+12);
+
+  // Player label + badge
+  const pBase=328+cH+32;
+  x.font='700 12px "Courier New",monospace'; x.fillStyle=MUT; x.textAlign='left';
+  x.fillText('PLAYER', 36, pBase+4);
+  const ptCol = h.playerTotal>21?RED:mainCol;
+  x.fillStyle=h.playerTotal>21?'rgba(240,83,101,0.15)':mainCol+'22';
+  x.beginPath(); x.roundRect(W-80,pBase-10,56,22,6); x.fill();
+  x.font='700 14px "Courier New",monospace'; x.fillStyle=ptCol; x.textAlign='center';
+  x.fillText(h.playerTotal, W-52, pBase+6);
+
+  pCards.forEach((cd,i)=>card(pX+i*(cW+gap), pBase+14, cd.r, cd.s, cW, cH));
+
+  // ── Stats row ──
+  const statsY = pBase+14+cH+32;
+  x.strokeStyle='rgba(73,234,203,0.2)'; x.lineWidth=1;
+  x.beginPath(); x.moveTo(36,statsY); x.lineTo(W-36,statsY); x.stroke();
+
+  function stat(label2, val, col, sx, sy){
+    x.font='500 10px monospace'; x.fillStyle=MUT; x.textAlign='center';
+    x.fillText(label2, sx, sy);
+    x.font='700 16px "Courier New",monospace'; x.fillStyle=col; x.textAlign='center';
+    x.fillText(val, sx, sy+22);
+  }
+
+  const hasSb = h.sbNet!==0;
+  if(hasSb){
+    const cols=3, colW=W/cols;
+    stat('BET',      'KAS '+h.bet.toLocaleString(),  WHT,  colW*0.5, statsY+18);
+    stat('HAND',     (h.handNet>=0?'+':'')+h.handNet, h.handNet>=0?KAS:RED, colW*1.5, statsY+18);
+    stat('SIDE BETS',(h.sbNet>=0?'+':'')+h.sbNet,  h.sbNet>=0?GOLD:RED,   colW*2.5, statsY+18);
+  } else {
+    const cols=2, colW=W/cols;
+    stat('BET',     'KAS '+h.bet.toLocaleString(), WHT, colW*0.5, statsY+18);
+    stat('BALANCE', 'KAS '+h.balance.toLocaleString(), KAS, colW*1.5, statsY+18);
+  }
+
+  // Balance if side bets shown
+  if(hasSb){
+    x.strokeStyle='rgba(73,234,203,0.1)'; x.lineWidth=1;
+    x.beginPath(); x.moveTo(36,statsY+52); x.lineTo(W-36,statsY+52); x.stroke();
+    x.font='500 11px monospace'; x.fillStyle=MUT; x.textAlign='left';
+    x.fillText('BALANCE', 36, statsY+70);
+    x.font='700 16px "Courier New",monospace'; x.fillStyle=KAS; x.textAlign='right';
+    x.fillText('KAS '+h.balance.toLocaleString(), W-36, statsY+70);
+  }
+
+  // ── Footer ──
+  x.strokeStyle='rgba(73,234,203,0.15)'; x.lineWidth=1;
+  x.beginPath(); x.moveTo(36,H-44); x.lineTo(W-44,H-44); x.stroke();
+  x.font='500 11px monospace'; x.fillStyle=MUT+'aa'; x.textAlign='center';
+  x.fillText('#KAS21  •  #Kaspa  •  #Blackjack', W/2, H-24);
+
+  // ── Output ──
+  c.toBlob(blob=>{
+    const blobUrl=URL.createObjectURL(blob);
+    // Try Web Share API first (works on mobile for direct sharing)
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[new File([blob],'kas21-hand.png',{type:'image/png'})]})){
+      navigator.share({
+        title:'KAS·21 — '+label,
+        text:`${sign}${h.net.toLocaleString()} KAS on KAS·21 Blackjack\n#KAS21 #Kaspa #Blackjack`,
+        files:[new File([blob],'kas21-hand.png',{type:'image/png'})]
+      }).catch(()=>{});
+    } else {
+      // Desktop: download + open Twitter
+      const a=document.createElement('a');
+      a.href=blobUrl; a.download='kas21-hand.png'; a.click();
+      const txt=`${sign}${h.net.toLocaleString()} KAS on KAS·21 Blackjack\n#KAS21 #Kaspa #Blackjack`;
+      setTimeout(()=>{
+        window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(txt),'_blank','noopener');
+        URL.revokeObjectURL(blobUrl);
+      },500);
+      toast('Image saved — attach to your tweet! 🎴');
+    }
+  },'image/png');
+}
+
+
+G.deck=buildShoe(6);
+showBet(true);showPlay(false);
+refreshAllPanels();
+// Don't open wallet modal here — disclaimer screen handles the flow
+switchMTab('dm');
+
+// ── Wallet account change / disconnect listeners ──
+function handleWalletAccountChange(accounts){
+  if(!G.wallet.ok || G.wallet.mode!=='real') return;
+  if(!accounts || accounts.length===0){
+    G.wallet={ok:false,addr:'',mode:'demo',provider:''};
+    document.getElementById('wdot').classList.remove('live');
+    document.getElementById('wlbl').textContent='NOT CONNECTED';
+    document.getElementById('walletBtn').classList.remove('on');
+    if(G.phase==='playing'||G.phase==='betting') nextRound();
+    toast('Wallet disconnected','err');
+  } else {
+    const newAddr=String(accounts[0]).toLowerCase().trim();
+    if(isValidKaspaAddr(newAddr) && newAddr!==G.wallet.addr){
+      G.wallet.addr=newAddr;
+      document.getElementById('wlbl').textContent=newAddr.slice(0,12)+'...';
+      refreshAllPanels();
+      toast('Account switched');
+    }
+  }
+}
+window.addEventListener('load',()=>{
+  try{ if(window.kasware?.on) window.kasware.on('accountsChanged', handleWalletAccountChange); }catch(e){}
+  try{ if(window.kastle?.on)  window.kastle.on('accountsChanged',  handleWalletAccountChange); }catch(e){}
+});
+</script>
+</body>
+</html>
